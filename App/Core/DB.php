@@ -1,0 +1,315 @@
+<?php
+namespace App\Core;
+use PDO;
+use Exception;
+use PDOException;
+use RuntimeException;
+
+class QueryFilter{
+    public string $Query = '';
+    public array $Params = [];
+
+    public function __construct(string $query = '', array $params = [])
+    {
+        $this->Query = $query;
+        $this->Params = $params;
+    }
+}
+
+class DB {
+    private static string $DNS = '';
+    private static string $User = '';
+    private static string $Password = '';
+    private static string $TimezoneOffset = 'SYSTEM';
+    private static $conn = null;
+
+    public static function setDNS(string $host, string $dbName){
+        self::$DNS = 'mysql:dbname=' . $dbName . ';host=' . $host . ';charset=utf8';
+    }
+
+    public static function setUser(string $user, string $password){
+        self::$User = $user;
+        self::$Password = $password;
+    }
+
+    public static function setTimezone(string $timezone){
+        self::$TimezoneOffset = self::getTimezoneOffset($timezone);
+    }
+
+    /**
+     * Get timezone offset for specified timezone (use system default timezone if omitted)
+     * @param string|null $timezone Valid timezone
+     * @return string timezone offset as +/- H:i compatible with MySql/MariaDB time_zone variable
+     */
+    private static function getTimezoneOffset($timezone = null){
+        // Use system default timezone
+        if(empty($timezone)){
+            $timezone = date_default_timezone_get();
+        }
+
+        $sysTz = new \DateTimeZone($timezone);
+        $tzo = $sysTz->getOffset(new \DateTime());
+        return (($tzo < 0)?'-':'+').gmdate("H:i", $tzo);
+    }
+
+    /**
+     * Create PDO connection to the DB and store it in $conn var
+     */
+    private static function connect()
+    {
+        try{
+            $initCom = "SET NAMES utf8mb4, wait_timeout=DEFAULT, interactive_timeout=DEFAULT, time_zone='". self::$TimezoneOffset . "';";
+    
+            self::$conn = new PDO(self::$DNS, self::$User, self::$Password,array(PDO::MYSQL_ATTR_INIT_COMMAND => $initCom));
+            
+            // Force PDO Errors to throw exception instead of Raising E_WARNING (this is useful to catch warning)
+            self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            self::$conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);// It's true by default
+        }catch(PDOException $e){
+            throw new RuntimeException('Failed to connect to Database: '. $e->getMessage());
+        }
+    }
+
+    /**
+     * Query DB for specified sql string
+     * @param string $sql sql string to be executed
+     * @param array $params associative array contains sql string required named params
+     */
+    public static function query($sql, $params=[]){
+        if(self::$conn === null){
+            self::connect();
+        }
+
+        // prepare the sql statement
+		try{
+			$stmt = self::$conn->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+		}catch (PDOException $e){
+			throw new RuntimeException('Failed to prepare sql query: '. $e->getMessage());
+		}
+
+        // Bind named sql params
+        try{
+            foreach($params as $p=>$v){
+                $p = trim($p);
+
+                if(strpos($p, ':') !== 0){
+                    $p = ':'.$p;
+                }
+
+                switch(true){
+                    case is_null($v):
+                        $stmt->bindValue($p, $v, PDO::PARAM_NULL);
+                    break;
+    
+                    case is_bool($v):
+                         $stmt->bindValue($p, $v, PDO::PARAM_BOOL);
+                    break;
+    
+                    case is_int($v):
+                         $stmt->bindValue($p, $v, PDO::PARAM_INT);
+                    break;
+                   
+                    case is_string($v):
+                        $stmt->bindValue($p, $v, PDO::PARAM_STR);
+                    break;
+                    
+                    case strlen($v) > 65535:
+                        $stmt->bindValue($p, $v, PDO::PARAM_LOB);
+                    break;
+    
+                    default:
+                        $stmt->bindValue($p, $v, PDO::PARAM_STR);
+                }
+            }
+        }catch(Exception $e){
+            throw new RuntimeException('Faild to bind param : '. $e->getMessage());
+        }
+    
+        $isOk = false;
+
+        // Exexute the statement
+        try{
+            $isOk = $stmt->execute();
+        }catch(Exception $e){
+            throw new RuntimeException('Statement execution error: '. $e->getMessage());
+        }
+
+        // Get any execution errors
+		$err = $stmt->errorInfo();
+		if(isset($err[2])){
+			throw new RuntimeException("Statement execution error:\n{$sql}");
+        }
+        
+        // Get last inserted id if any
+        $insertId = 0;
+        $rowsets = [];
+
+        if($isOk){
+            $insertId = self::$conn->lastInsertId();
+
+            // Start looping available Rowsets
+             do{
+                 // Check if columns available (result available) before fetching the rows (which will cause error if no result returned)
+                 if($stmt->columnCount()>0){
+                     // Fetch rowsets
+                     $rowsets[] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                 }
+             }while($stmt->nextRowset());
+     
+             // close the statement
+             $stmt->closeCursor();
+        }
+        
+        // Return all rowsets or one first one if no others exist
+        if(count($rowsets) > 0){
+            // If a query returned one rowset only we use the first result on rowset 0 otherwise we continue using an array of results
+            return (count($rowsets)==1)?$rowsets[0]:$rowsets;
+        }
+		
+        // Return last inserted id if any, otherwise return isOk
+        return ($insertId > 0)?$insertId:$isOk;
+    }
+
+    /**
+     * Sanitize comma separated string to be safely used inside an IN function
+     * @param string $csv Comma separated values
+     * @return string Safe comma separated values with strings being quoted
+     */
+    public static function sanitizeInParam($csv){
+        if(self::$conn === null){
+            self::connect();
+        }
+
+        if(is_string($csv)){
+            $csv = explode(',', $csv);
+        }
+    
+        $sanitaizedCSV = array_map(function($item){
+            $item=trim($item);
+            
+            return is_numeric($item)?$item:self::$conn->quote($item);
+        }, $csv);
+    
+        return implode(',', $sanitaizedCSV);
+    }
+
+    /**
+     * @param array $searchParams array of search params (name: value)
+     * @param array $criteria array of (search param name => [logical operator if occurs first, logical operator if occurs after, sql condition, [allowed empty]])
+     * - allowed empty: the empty() function considers (0, '0', 0.0, null, false) as empty so the criteria will not be included, we can tell the builder to include the filter if one or more of these empty values appeared in the specified search param value
+     * @param string $prefix prefix search params names to prevent collision with other query params that uses columns name 
+     * @return QueryFilter Query filter object
+     */
+    public static function buildSQLFilter($searchParams, $criteria, $prefix = ''){
+        if(is_null($searchParams)){
+            return new QueryFilter();
+        }
+
+        // Trim string params values
+        $searchParams = array_map(function($item){
+            if(gettype($item) == 'string'){
+                return trim($item);
+            }
+
+            return $item;
+        }, $searchParams);
+        
+        $sqlFilter = [];
+        $sqlParams = [];
+        
+        foreach($criteria as $pn => $crt){
+            $allowedEmpty = [];
+
+            if(empty($crt)){
+                continue;
+                
+            }elseif(count($crt) == 1){ // One item, it's the condition part
+                $operator1 = $operator2 = '';
+                $condition = $crt[0];
+                
+            }elseif(count($crt) == 2){ // Two items, first one is the operator, the second one is the condition
+                $operator1 = $crt[0];
+                $operator2 = $crt[0];
+                $condition = $crt[1];
+                
+            }elseif(count($crt) == 3){ // Tree items, first one is the operator when no previous filter included (usually WHERE), the second one is the operator when a previous filter is included ( usually AND), the third one is the condistion
+                $operator1 = $crt[0];
+                $operator2 = $crt[1];
+                $condition = $crt[2];
+
+            }else{
+                list($operator1, $operator2, $condition, $allowedEmpty) = $crt;
+            }
+            
+            // Check if parameter name exists in searchParams
+            if(!array_key_exists($pn, $searchParams)){
+                continue;
+            }
+            
+            // Ignore empty parameters
+            // For some reasons in_array() always returns true for empty string, so we add an extra condition for that
+            // Also be aware that 0 == '' but 0 !== ''
+            if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
+                continue;
+            }
+            
+            if(!empty($condition)){
+                $sqlFilter[] = (empty($sqlFilter)?$operator1: $operator2).' '.$condition;
+            }
+
+            $sqlParams[$prefix.$pn] = $searchParams[$pn];
+        }
+
+        return new QueryFilter("\r\n".implode("\r\n", $sqlFilter), $sqlParams);
+    }
+
+    public static function tableFromArray($arr, $colNames = []){
+        if(self::$conn === null){
+            self::connect();
+        }
+
+        $tbl = [];
+
+        foreach($arr as $r){
+            $vals = [];
+
+            for($i = 0; $i < count($r); $i++){
+                $v = $r[$i];
+                $n = $colNames[$i]?? $i;
+
+                if(!is_numeric($v)){
+                    $v = self::$conn->quote($v);
+                }
+
+                $vals[] = "$v AS `$n`";
+            }
+
+            $tbl[] = 'SELECT ' . implode(', ', $vals);
+        }
+
+        return implode("\nUNION\n", $tbl);
+    }
+
+    public static function tableFromAssocArray($arr, $keyColName = 'key', $valueColName = 'value'){
+        if(self::$conn === null){
+            self::connect();
+        }
+
+        $tbl = [];
+
+        foreach($arr as $k => $v){
+            if(!is_numeric($k)){
+                $k = self::$conn->quote($k);
+            }
+
+            if(!is_numeric($v)){
+                $v = self::$conn->quote($v);
+            }
+
+            $tbl[] = "SELECT $k AS `$keyColName`, $v as `$valueColName`";
+        }
+
+        return implode("\nUNION\n", $tbl);
+    }
+}
+?>
