@@ -218,7 +218,6 @@ class DB {
         $sqlFilter = [];
         $sqlParams = [];
         
-        $whereClause = 'WHERE';
         $operator = '';
 
         foreach($criteria as $pn => $crt){
@@ -256,7 +255,7 @@ class DB {
             }
             
             if(!empty($condition)){
-                $sqlFilter[] = (empty($sqlFilter)?$whereClause: $operator).' '.$condition;
+                $sqlFilter[] = (empty($sqlFilter)?'WHERE': strtoupper($operator)).' '.$condition;
             }
         }
 
