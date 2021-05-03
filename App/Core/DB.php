@@ -195,7 +195,8 @@ class DB {
 
     /**
      * @param array $searchParams array of search params (name: value)
-     * @param array $criteria array of (search param name => [logical operator if occurs first, logical operator if occurs after, sql condition, [allowed empty]])
+     * @param array $criteria array of (search param name => [logical operator (AND/OR), sql condition, [allowed empty]])
+     * - param name: when empty the condition part will be always included (used to add default filter)
      * - allowed empty: the empty() function considers (0, '0', 0.0, null, false) as empty so the criteria will not be included, we can tell the builder to include the filter if one or more of these empty values appeared in the specified search param value
      * @param string $prefix prefix search params names to prevent collision with other query params that uses columns name 
      * @return QueryFilter Query filter object
@@ -217,47 +218,46 @@ class DB {
         $sqlFilter = [];
         $sqlParams = [];
         
+        $whereClause = 'WHERE';
+        $operator = '';
+
         foreach($criteria as $pn => $crt){
             $allowedEmpty = [];
 
-            if(empty($crt)){
+            if(empty($crt)){ // Nothing in the criteria
                 continue;
                 
             }elseif(count($crt) == 1){ // One item, it's the condition part
-                $operator1 = $operator2 = '';
                 $condition = $crt[0];
                 
             }elseif(count($crt) == 2){ // Two items, first one is the operator, the second one is the condition
-                $operator1 = $crt[0];
-                $operator2 = $crt[0];
+                $operator = $crt[0];
                 $condition = $crt[1];
                 
-            }elseif(count($crt) == 3){ // Tree items, first one is the operator when no previous filter included (usually WHERE), the second one is the operator when a previous filter is included ( usually AND), the third one is the condistion
-                $operator1 = $crt[0];
-                $operator2 = $crt[1];
-                $condition = $crt[2];
-
             }else{
-                list($operator1, $operator2, $condition, $allowedEmpty) = $crt;
+                list($operator, $condition, $allowedEmpty) = $crt;
             }
             
-            // Check if parameter name exists in searchParams
-            if(!array_key_exists($pn, $searchParams)){
+            // Check if parameter name exists in searchParams (ignore the empty special case)
+            if(!($pn == '' || array_key_exists($pn, $searchParams))){
                 continue;
             }
             
-            // Ignore empty parameters
+            // Ignore empty parameter values and include existing ones in the result
             // For some reasons in_array() always returns true for empty string, so we add an extra condition for that
             // Also be aware that 0 == '' but 0 !== ''
-            if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
-                continue;
+            if($pn !== ''){
+                if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
+                    continue;
+                }
+                
+                // Adding existing params
+                $sqlParams[$prefix.$pn] = $searchParams[$pn];
             }
             
             if(!empty($condition)){
-                $sqlFilter[] = (empty($sqlFilter)?$operator1: $operator2).' '.$condition;
+                $sqlFilter[] = (empty($sqlFilter)?$whereClause: $operator).' '.$condition;
             }
-
-            $sqlParams[$prefix.$pn] = $searchParams[$pn];
         }
 
         return new QueryFilter("\r\n".implode("\r\n", $sqlFilter), $sqlParams);
