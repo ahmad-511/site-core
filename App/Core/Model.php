@@ -12,7 +12,7 @@ abstract class Model{
      * Query the database for specified sql string
      * @param string $sql SQL string to be executed
      * @param array $params Array of the sql named params
-     * @return array of Rowsets if sql has multi result or one rowset if it contains one result
+     * @return array|int|boolean array of Rowsets if sql has multi result or one rowset if it contains one result, int for inserted id, boolean otherwise
      */
     protected function query($sql, Array $params=[]){
         return DB::query($sql, $params);

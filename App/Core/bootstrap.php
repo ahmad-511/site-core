@@ -4,7 +4,7 @@ declare (strict_types = 1);
 require_once __DIR__ . "/../../vendor/autoload.php";
 require_once __DIR__ . '/../configs/global.php';
 
-use App\Core\App;
+use App\Core\Auth;
 use App\Core\Router;
 use App\Core\Template;
 use App\Core\Captcha;
@@ -14,9 +14,11 @@ use App\Core\Mailer;
 use App\Core\Path;
 use App\Core\Request;
 
-session_name('ETESALATAK');
+session_name(SESSION_NAME);
 session_start();
 date_default_timezone_set(DEFAULT_TIMEZONE);
+
+Auth::$AuthSession = AUTHENTICATION_SESSION_NAME;
 
 DB::setDNS(DB_HOST, DB_NAME);
 DB::setUser(DB_USER, DB_PASSWORD);
@@ -26,8 +28,8 @@ Router::setHomePageCode('home');
 Router::setLocales(ACCEPTED_LOCALES);
 Router::setDefaultLocale(DEFAULT_LANGUAGE);
 Router::setLocaleMapper([
-    'login' => 'en',
-    'dashboard' => 'en',
+    // 'login' => 'en',
+    // 'dashboard' => 'en',
 ]);
 
 Router::setViewsDir(__DIR__ .'/../views/');

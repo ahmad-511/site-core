@@ -173,5 +173,27 @@ class App{
         
         return ($pageNum - 1) * RECORDS_PER_PAGE;
     }
+
+    /**
+     * Get account initials from account full name
+     * @param string account full name
+     * @return string account's initials (one or two letters)
+     */
+    public static function getNameInitials($fullName){
+        if(empty($fullName)){
+            return $fullName;
+        }
+    
+        $fullName = str_replace('  ', ' ', $fullName);
+        $parts = explode(' ', $fullName);
+    
+        if(count($parts) == 1){
+            return substr($parts[0], 0, 1);
+        }
+    
+        if(count($parts) > 1){
+            return substr($parts[0], 0, 1) . substr($parts[count($parts)-1], 0, 1);
+        }
+    }
 }
 ?>

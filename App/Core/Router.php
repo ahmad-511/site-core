@@ -141,6 +141,16 @@ class Router{
         self::$Routes[] = $route;
     }
 
+    /** Add custom route regardless of the method
+     * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
+     * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
+     * @param string $name Route name (optional), used to build a route path from its name
+    */
+    public static function any($path, $controller, $name = ''){
+        $route = new Route('any', $path, $controller, $name);
+        self::$Routes[] = $route;
+    }
+
     /** Get locale code for current request or for specified view code
      * @param string $viewCode View code (optional) to get the locale code for it
      * @return string Locale code
@@ -272,7 +282,7 @@ class Router{
     private static function customRouting($reqMethod, $reqPath){
         $controller = '';
         foreach(self::$Routes as $route){
-            if($reqMethod != $route->method){
+            if($route->method !='any' && $reqMethod != $route->method){
                 continue;
             }
 
@@ -310,12 +320,12 @@ class Router{
                 self::loadView($controller, $params);
 
                 return true;
-            // When controller is a function the view content must be returned by it
             }elseif(is_array($controller) && is_callable($controller)){
                 self::executeController($controller[0], $controller[1], $params);
-
+                
                 return true;
             }elseif(is_callable($controller)){
+                // When controller is a function the view content must be returned by it
                 $viewContent = $controller($params);
                 self::loadLayout($viewContent);
                 
@@ -335,12 +345,12 @@ class Router{
 
         // All API calls
         if ($viewCode == 'api') {
-            $model = $URISegments[1] ?? '';
+            $controller = $URISegments[1] ?? '';
             $method = $URISegments[2] ?? '';
 
-            $model = '\\App\\Model\\'.$model;
-            // Execlude model and method names from the params list
-            self::executeController($model, $method, array_slice($URISegments, 3));
+            $controller = '\\App\\Controller\\'.$controller.'Controller';
+            // Execlude controller and method names from the params list
+            self::executeController($controller, $method, array_slice($URISegments, 3));
 
             return;
         }else{
@@ -368,26 +378,26 @@ class Router{
     }
 
     /** Execute controller method */
-    public static function executeController($model, $method, $params = []){
-        if (!self::controllerExecutionGuard($model, $method)) {
+    public static function executeController($controller, $method, $params = []){
+        if (!self::controllerExecutionGuard($controller, $method)) {
             $result = new Result(null, 'Method call not allowed', 'error');
             Response::send($result, 403);
         }
 
-        if (class_exists($model)) {
-            // Instantiate model with POST params
-            $obj = new $model(Request::getData());
+        if (class_exists($controller)) {
+            // Instantiate controller with POST params
+            $obj = new $controller(Request::body());
         } else {
-            $result = new Result(null, "Model $model doesn't exist", 'error');
+            $result = new Result(null, "Controller $controller doesn't exist", 'error');
             Response::send($result, 404);
         }
 
         if (!method_exists($obj, $method)) {
-            $result = new Result(null, "Method $model::$method doesn't exist", 'error');
+            $result = new Result(null, "Method $controller::$method doesn't exist", 'error');
             Response::send($result, 404);
         }
 
-        // Call Model's method and pass all URI segments as params
+        // Call controller's method and pass all URI segments as params
         try {
             $result = $obj->$method($params);
             // Set server message / Redirect 
@@ -479,12 +489,12 @@ class Router{
 
     /** 
      * Check whether or not the current user is allowed to execute specified controller method
-     * @param string $model Model name
-     * @param string $method Model's method name
+     * @param string $controller Controller name
+     * @param string $method Controller's method name
      * @return bool true if allowed, false otherwise
     */
-    public static function controllerExecutionGuard($model, $method){
-        return Guard::methodAllowed($model, $method);
+    public static function controllerExecutionGuard($controller, $method){
+        return Guard::methodAllowed($controller, $method);
     }
 
     /**

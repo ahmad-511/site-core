@@ -60,9 +60,27 @@ class Request
     }
 
     /**
+     * Get data payload from $_POST or from input stream when content type is json
      * @return array POST params
      */
-    public static function getData(){
+    public static function body(){
+        static $cache = null;
+        
+        if(!is_null($cache)){
+            return $cache;
+        }
+        
+        $isJSONContent = strtolower(getallheaders()['Content-Type']??'') == 'application/json';
+
+        if($isJSONContent){
+            $data = json_decode(file_get_contents('php://input'), true);
+            // Make sure input stream is successfully decoded
+            if(!is_null($data)){
+                $_POST = $data;
+            }
+        }
+        
+        $cache = $_POST;
         return $_POST;
     }
 }

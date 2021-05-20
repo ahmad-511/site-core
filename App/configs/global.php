@@ -11,7 +11,7 @@ define('SUPPORT_EMAIL', 'Info <info@site-core.com>');
 define('COPYRIGHT', 'Dev Team &copy;' . date('Y'));
 
 define('DB_HOST', 'localhost');
-define('DB_USER', '');
+define('DB_USER', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME', '');
 
@@ -22,6 +22,9 @@ define('MAINTENANCE_PASSWORD', '*****');
 
 define('RECORDS_PER_PAGE', 25);
 define('MAILER_DEBUG_MODE', true);
+
+define('SESSION_NAME', 'sitecore');
+define('AUTHENTICATION_SESSION_NAME', 'auth_sess');
 
 // PayPal configs
 define('PAYPAL_SANDBOX_MODE', true);

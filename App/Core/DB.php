@@ -74,6 +74,7 @@ class DB {
      * Query DB for specified sql string
      * @param string $sql sql string to be executed
      * @param array $params associative array contains sql string required named params
+     * @return array|int|boolean array for select generates result, int for inserted, boolean otherwise 
      */
     public static function query($sql, $params=[]){
         if(self::$conn === null){
@@ -195,9 +196,9 @@ class DB {
 
     /**
      * @param array $searchParams array of search params (name: value)
-     * @param array $criteria array of (search param name => [logical operator (AND/OR), sql condition, [allowed empty]])
-     * - param name: when empty the condition part will be always included (used to add default filter)
-     * - allowed empty: the empty() function considers (0, '0', 0.0, null, false) as empty so the criteria will not be included, we can tell the builder to include the filter if one or more of these empty values appeared in the specified search param value
+     * @param array|string $criteria array of (search param name(s) => [logical operator (AND/OR), sql condition, [allowed empty]]), when string it's the sql condition
+     * - param name: comma separated, when empty the condition part will be always included (used to add default filter),
+     * - allowed empty: array, the empty() function considers (0, '0', 0.0, null, false) as empty so the criteria will not be included, we can tell the builder to include the filter if one or more of these empty values appeared in the specified search param value
      * @param string $prefix prefix search params names to prevent collision with other query params that uses columns name 
      * @return QueryFilter Query filter object
      */
@@ -226,6 +227,9 @@ class DB {
             if(empty($crt)){ // Nothing in the criteria
                 continue;
                 
+            }elseif(is_string($crt)){
+                $condition = $crt;
+
             }elseif(count($crt) == 1){ // One item, it's the condition part
                 $condition = $crt[0];
                 
@@ -234,24 +238,35 @@ class DB {
                 $condition = $crt[1];
                 
             }else{
-                list($operator, $condition, $allowedEmpty) = $crt;
+                $operator = $crt[0];
+                $condition = $crt[1];
+                $allowedEmpty = $crt[2];
             }
             
-            // Check if parameter name exists in searchParams (ignore the empty special case)
-            if(!($pn == '' || array_key_exists($pn, $searchParams))){
-                continue;
-            }
+            // $pn may have comma separated param names
+            $pns = explode(',', $pn);
             
-            // Ignore empty parameter values and include existing ones in the result
-            // For some reasons in_array() always returns true for empty string, so we add an extra condition for that
-            // Also be aware that 0 == '' but 0 !== ''
-            if($pn !== ''){
-                if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
-                    continue;
+            foreach($pns as $pn){
+                $pn = trim($pn);
+
+                // Check if parameter name exists in searchParams (ignore the empty special case)
+                if(!($pn == '' || array_key_exists($pn, $searchParams))){
+                    // Continue the upper loop
+                    continue 2;
                 }
                 
-                // Adding existing params
-                $sqlParams[$prefix.$pn] = $searchParams[$pn];
+                // Ignore empty parameter values and include existing ones in the result
+                // For some reasons in_array() always returns true for empty string, so we add an extra condition for that
+                // Also be aware that 0 == '' but 0 !== ''
+                if($pn !== ''){
+                    if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
+                        // Continue the upper loop
+                        continue 2;
+                    }
+                    
+                    // Adding existing params
+                    $sqlParams[$prefix.$pn] = $searchParams[$pn];
+                }
             }
             
             if(!empty($condition)){

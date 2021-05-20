@@ -38,21 +38,21 @@ class Guard {
     }
     
     /**
-     * Check if current user is allowed to execute sepecified model's method
-     * @param string $model Model name
-     * @param string $method Model's method name
+     * Check if current account is allowed to execute sepecified controller's method
+     * @param string $controller Controller name
+     * @param string $method Controller's method name
      * @return bool whether or not execution is allowed
      */
-    public static function methodAllowed($model, $method)
+    public static function methodAllowed($controller, $method)
     {
         $loggedInOnlyMethods = [
-            'User|Create',
-            'User|Read',
-            'User|Edit',
-            'User|Delete',
+            'Account|Create',
+            'Account|Read',
+            'Account|Edit',
+            'Account|Delete',
         ];
 
-        if(!Auth::isLoggedIn() && in_array("$model|$method", $loggedInOnlyMethods, true)){
+        if(!Auth::isLoggedIn() && in_array("$controller|$method", $loggedInOnlyMethods, true)){
             return false;
         }
 

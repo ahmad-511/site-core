@@ -1,128 +1,90 @@
 <?php
 declare (strict_types = 1);
+
 namespace App\Model;
 
 use App\Core\App;
-use App\Core\Auth;
 use App\Core\Model;
-use App\Core\Validator;
 use App\Core\Result;
-use App\Core\Router;
+use Exception;
 
-class User extends Model
-{
-    private $user_id;
-    private $email;
-    private $password;
-    private $display_name;
-    private $search;
-    private $validator;
+class User extends Model {
 
-    public function __construct(array $props = [])
-    {
-        $this->user_id = $props['user_id'] ?? 0;
-        $this->email = $props['email'] ?? '';
-        $this->password = $props['password'] ?? '';
-        $this->display_name = $props['display_name'] ?? '';
-        $this->search = json_decode($props['search'] ?? '[]', true);
-        
-        // Only hash password if not empty
-        if(!empty($this->password)){
-            $this->password = hash('sha256', $this->password);
-        }
-
-        $this->validator = new Validator($this);
-        $this->validator->add('user_id', 'Invalid user id', Validator::positive(1));
-        $this->validator->add('email', 'Invalid email', Validator::email());
-        $this->validator->add('password', 'Password is missing', Validator::notEmpty());
-        $this->validator->add('display_name', 'Name is missing', Validator::notEmpty());
-    }
-
-    private function isDuplicated($isEdit = false):int{
+    public function isDuplicated(array $params = []):Result{
         $sql = "SELECT user_id
             FROM users";
 
         $criteria = [
-            'email'=> ['WHERE', 'AND', "email = :sf_email"]
+            'email, phone'=> "(email = :sf_email OR phone = :sf_phone)"
         ];
-
-        if($isEdit){
-            $criteria['user_id'] = ['WHERE', 'AND', 'user_id != :sf_user_id'];
+        
+        if($params['user_id']??0){
+            $criteria['user_id'] = ['AND', 'user_id != :sf_user_id'];
         }
 
         $filter = $this->buildSQLFilter(
-            get_object_vars($this),
+            $params,
             $criteria,
             'sf_'
         );
 
-        $sql .= $filter['sql'];
+        $sql .= $filter->Query;
 
-        $rowsets = $this->query($sql, $filter['params']);
+        try {
+            $rowsets = $this->query($sql, $filter->Params);
+            return new Result(
+                empty($rowsets)?0: $rowsets[0]['user_id']
+            );
 
-        if (!empty($rowsets)) {
-            return intval($rowsets[0]['user_id']);
+        }catch (Exception $ex){
+            return new Result(
+                null,
+                $ex->getMessage(),
+                'db_error'
+            );
         }
-
-        return 0;
     }
 
-    private function isReferenced():array{
+    public function isReferenced():Result{
         // No refrences for users yet
-        return [];
+        try{
+            return new Result(
+                []
+            );
+
+        }catch(Exception $ex){
+            return new Result(
+                null,
+                $ex->getMessage(),
+                'db_error'
+            );
+        }
     }
 
     public function Create(array $params = []): Result
     {
-        if($dataErr = $this->validator->validate(['user_id'])){
-            return new Result(
-                $dataErr,
-                'Some data are missing or invalid',
-                'validation_error',
-                ''
-            );
-        }
+        $sql = "INSERT INTO users
+            (user_type, gender, hidden_personality, name, surname, country_code, email, email_verification, phone, phone_verification, password, personal_photo, personal_photo_verification, register_date, admin_notes, user_status)
+            VALUES(:user_type, :gender, :hidden_personality, :name, :surname, :country_code, :email, :email_verification, :phone, :phone_verification, :password, :personal_photo, :personal_photo_verification, :register_date, :admin_notes, :user_status)";
 
-        if($dId = $this->isDuplicated()){
+        try {
+            $id = $this->query($sql, $params);
+            return new Result(
+                $id
+            );
+
+        }catch(Exception $ex){
             return new Result(
                 null,
-                "User exists with ID #$dId",
-                'error',
-                ''
+                $ex->getMessage(),
+                'db_error'
             );
         }
-
-        $sql = "INSERT INTO users(email, password, display_name) VALUES(:email, :password, :display_name)";
-
-        if ($this->user_id = $this->query($sql, [
-            'email' => $this->email,
-            'password' => $this->password,
-            'display_name' => $this->display_name
-        ])
-        ) {
-            // Return created record
-            $res = $this->Read([$this->user_id]);
-
-            return new Result(
-                $res->data,
-                'User created',
-                'success',
-                '',
-                $res->metaData
-            );
-        }
-
-        return new Result(
-            null,
-            'Failed to create user',
-            'error',
-            ''
-        );
     }
 
     public function Read(array $params = []): Result
     {
-        $sql = "SELECT user_id, email, display_name
+        $sql = "SELECT user_id, user_type, gender, hidden_personality, name, surname, country_code, email, email_verification, phone, phone_verification, password, personal_photo, personal_photo_verification, register_date, admin_notes, user_status
             FROM users";
 
         $args = [
@@ -130,29 +92,33 @@ class User extends Model
             'offset' => App::getPageOffset($params['page']??1)
         ];
 
-        $withMeta = true;
-        
-        if (isset($params[0])) {
-            $this->search['user_id'] = (int) $params[0];
-            $withMeta = false;
-        }
-
         $filter = $this->buildSQLFilter(
-            $this->search,
+            $params,
             array(
-                'user_id' =>    ['WHERE', 'AND', 'user_id = :sf_user_id', [0, '0']],
-                'email'=>       ['WHERE', 'AND', "email = :sf_email"],
-                'display_name'=>['WHERE', 'AND', "display_name LIKE CONCAT('%', :sf_display_name, '%')"]
+                'user_id' =>             ['AND', 'user_id = :sf_user_id', [0, '0']],
+                'user_type'=>            ['AND', "user_type = :sf_user_type"],
+                'gender'=>                  ['AND', "gender = :sf_gender"],
+                'country_code'=>            ['AND', "country_code = :sf_country_code"],
+                'email'=>                   ['AND', "email = :sf_email"],
+                'phone'=>                   ['AND', "phone = :sf_phone"],
+                'register_date_from'=>      ['AND', "register_date >= :sf_register_date_from"],
+                'register_date_to'=>        ['AND', "register_date <= :sf_register_date_to"],
+                'admin_notes'=>             ['AND', "admin_notes LIKE CONCAT('%', :sf_admin_notes, '%')"],
+                'user_status'=>          ['AND', "user_status = :sf_user_status"]
             ),
             'sf_'
         );
 
         $sql .= $filter->Query;
 
-        $sql .= " ORDER BY display_name
+        $sql .= " ORDER BY register_date DESC
             LIMIT :limit OFFSET :offset;";
         
-        if($withMeta){
+        // Adding meta data when reading all records
+        $hasMeta = false;
+        if (($params['user_id']??0) == 0) {
+            $hasMeta = true;
+
             $sql .= "SELECT COUNT(*) AS total_records, :limit AS records_per_page
                 FROM users";
             $sql .= $filter->Query.";";
@@ -160,169 +126,107 @@ class User extends Model
 
         $args = array_merge($args, $filter->Params);
         
-        $rowsets = $this->query($sql, $args);
+        $rowsets = [];
+        try {
+            $rowsets = $this->query($sql, $args);
+        }catch (Exception $ex){
+            return new Result(
+                null,
+                $ex->getMessage(),
+                'db_error'
+            );
+        }
 
         if ($rowsets === false) {
             return new Result(
                 [],
                 'Failed to read users',
-                'error',
-                ''
+                'error'
             );
         }
 
         return new Result(
-            $withMeta?$rowsets[0]:$rowsets,
+            $hasMeta?$rowsets[0]:$rowsets,
             '',
             '',
             '',
-            $withMeta?$rowsets[1][0]:null
+            $hasMeta?$rowsets[1][0]:null
         );
     }
 
-    public function Edit(array $params = []): Result
+    public function Update(array $params = []): Result
     {
-        if($dataErr = $this->validator->validate(['password'])){
-            return new Result(
-                $dataErr,
-                'Some data are missing or invalid',
-                'validation_error',
-                ''
-            );
-        }
-
-        if($dId = $this->isDuplicated(true)){
-            return new Result(
-                null,
-                "User exists with ID #$dId",
-                'error',
-                ''
-            );
-        }
-
         $sql = "UPDATE users
             SET
+                hidden_personality = :hidden_personality,
+                name = :name,
+                surname = :surname,
+                country_code = :country_code,
                 email = :email,
+                phone = :phone,
                 password = IF(:password = '', password, :password),
-                display_name = :display_name
+                personal_photo = :personal_photo
             WHERE user_id = :user_id;";
 
         // Don't update empty password
-        if($this->password == hash('sha256', '')){
-            $this->password = '';
+        if($params['password'] == hash('sha256', '')){
+            $params['password'] = '';
         }
 
-        if ($this->query($sql, [
-            'user_id' => $this->user_id,
-            'email' => $this->email,
-            'password' => $this->password,
-            'display_name' => $this->display_name
-        ])
-        ) {
-            // Return created record
-            $res = $this->Read([$this->user_id]);
-
-            if(Auth::getUser('user_id') == $this->user_id){
-                Auth::setUser($res->data[0]);
+        try {
+            if($this->query($sql, $params)){
+                return new Result(
+                    $params['user_id']
+                );
             }
 
+        }catch(Exception $ex){
             return new Result(
-                $res->data,
-                'User edited',
-                'success',
-                '',
-                $res->metaData
+                null,
+                $ex->getMessage(),
+                'db_error'
             );
         }
-
-        return new Result(
-            null,
-            'Failed to edit user',
-            'error',
-            ''
-        );
     }
 
     public function Delete(array $params = []): Result
     {
-        if($refs = $this->isReferenced()){
-            return new Result(
-                $refs,
-                'User is referenced by',
-                'reference_error',
-                ''
-            );
-        }
-        
         $sql = "DELETE FROM users WHERE user_id = :user_id";
 
-        if ($this->query($sql, [
-            'user_id' => $this->user_id,
-        ])
-        ) {
+        try {
+            if($this->query($sql, $params)){
+                return new Result(
+                    $params['user_id']
+                );
+            }
+
+        }catch(Exception $ex){
             return new Result(
                 null,
-                'User deleted',
-                'success',
-                ''
+                $ex->getMessage(),
+                'db_error'
             );
         }
-
-        return new Result(
-            null,
-            'Failed to delete user',
-            'error',
-            ''
-        );
     }
 
-    public function Login(Array $params=[]){
-        $sql = "SELECT user_id, email, display_name
+    public function Login(array $params = []):Result{
+        $sql = "SELECT user_id, user_type, name, user_status
             FROM users
-            WHERE email = :email AND password = :password
+            WHERE (email = :email_phone OR phone = :email_phone) AND password = :password
             LIMIT 1;";
 
-        $args = [
-            'email' => $this->email,
-            'password' => $this->password
-        ];
-
-        $rowsets = $this->query($sql, $args);
-
-        if ($rowsets === false || empty($rowsets)) {
+        try{
+            $rowsets = $this->query($sql, $params);
             return new Result(
-                [],
-                'Login failed',
-                'error',
-                ''
+                $rowsets
+            );
+
+        }catch(Exception $ex){
+            return new Result(
+                null,
+                $ex->getMessage(),
+                'db_error'
             );
         }
-
-        Auth::setUser($rowsets[0]);
-
-        $redirectUrl = Router::getRedirectViewCode();
-        if(empty($redirectUrl)){
-            $redirectUrl = '/Dashboard';
-        }
-        
-        return new Result(
-            $rowsets,
-            "Welcome {$rowsets[0]['display_name']}",
-            'success',
-            $redirectUrl
-        );
-    }
-
-    public function Logout(Array $params=[]){
-        $userName = Auth::getUserName();
-
-        session_destroy();
-
-        return new Result(
-            null,
-            sprintf(APP::loc("Good Bye %s"), $userName),
-            'success',
-            '/Home'
-        );
     }
 }

@@ -7,7 +7,7 @@ use App\Core\Router;
 require_once __DIR__ . '/App/Core/bootstrap.php';
 
 function checkMaintenanceMode(){
-    $maintenancePass = Request::getData('password')??'';
+    $maintenancePass = (Request::body())['password']??'';
 
     if($maintenancePass == MAINTENANCE_PASSWORD) {
         $_SESSION['bypass_maintenance'] = true;
