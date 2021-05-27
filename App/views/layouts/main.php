@@ -46,15 +46,15 @@ $pageDir = (Router::getCurrentLocaleCode() == 'ar')?'rtl':'ltr';
     ?>
 </head>
 
-<body class="page_<?= Router::getCurrentViewCode()?>">
+<body class="view-<?= Router::getCurrentViewCode()?>">
 
-<?php include __DIR__ . '/_header.php' ?>
+<?php include __DIR__ . '/../partials/header.php' ?>
 
 <main>
-    <?= $viewContent ?>
+    <?= Router::getViewContent() ?>
 </main>
 
-<?php include __DIR__ . '/_footer.php' ?>
+<?php include __DIR__ . '/../partials/footer.php' ?>
 
 <?php if(MAINTENANCE_MODE):?>
     <div class="maintenance-mode">

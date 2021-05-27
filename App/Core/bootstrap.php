@@ -28,8 +28,8 @@ Router::setHomePageCode('home');
 Router::setLocales(ACCEPTED_LOCALES);
 Router::setDefaultLocale(DEFAULT_LANGUAGE);
 Router::setLocaleMapper([
-    // 'login' => 'en',
-    // 'dashboard' => 'en',
+    'login' => 'en',
+    'dashboard' => 'en',
 ]);
 
 Router::setViewsDir(__DIR__ .'/../views/');

@@ -270,7 +270,12 @@ export function plural(word, count){
     return word + (isUpperCase?suffix.toUpperCase(): suffix);
 }
 
-export function NL2P(str) {
+export function nl2br(str) {
+    str = str || '';
+    return str.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, '<br>');
+}
+
+export function nl2p(str) {
     str = str || '';
     return '<p>' + str.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, '</p><p>') + '</p>';
 }

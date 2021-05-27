@@ -8,18 +8,18 @@ use App\Core\Model;
 use App\Core\Result;
 use Exception;
 
-class User extends Model {
+class Account extends Model {
 
     public function isDuplicated(array $params = []):Result{
-        $sql = "SELECT user_id
-            FROM users";
+        $sql = "SELECT account_id
+            FROM accounts";
 
         $criteria = [
             'email, phone'=> "(email = :sf_email OR phone = :sf_phone)"
         ];
         
-        if($params['user_id']??0){
-            $criteria['user_id'] = ['AND', 'user_id != :sf_user_id'];
+        if(($params['account_id']??0) > 0){
+            $criteria['account_id'] = ['AND', 'account_id != :sf_account_id'];
         }
 
         $filter = $this->buildSQLFilter(
@@ -33,7 +33,7 @@ class User extends Model {
         try {
             $rowsets = $this->query($sql, $filter->Params);
             return new Result(
-                empty($rowsets)?0: $rowsets[0]['user_id']
+                empty($rowsets)?0: $rowsets[0]['account_id']
             );
 
         }catch (Exception $ex){
@@ -45,8 +45,8 @@ class User extends Model {
         }
     }
 
-    public function isReferenced():Result{
-        // No refrences for users yet
+    public function isReferenced(array $params = []):Result{
+        // No refrences for accounts yet
         try{
             return new Result(
                 []
@@ -63,9 +63,9 @@ class User extends Model {
 
     public function Create(array $params = []): Result
     {
-        $sql = "INSERT INTO users
-            (user_type, gender, hidden_personality, name, surname, country_code, email, email_verification, phone, phone_verification, password, personal_photo, personal_photo_verification, register_date, admin_notes, user_status)
-            VALUES(:user_type, :gender, :hidden_personality, :name, :surname, :country_code, :email, :email_verification, :phone, :phone_verification, :password, :personal_photo, :personal_photo_verification, :register_date, :admin_notes, :user_status)";
+        $sql = "INSERT INTO accounts
+            (account_type, gender, hidden_personality, name, surname, country_code, email, email_verification, phone, phone_verification, password, personal_photo, personal_photo_verified, register_date, admin_notes, account_status)
+            VALUES(:account_type, :gender, :hidden_personality, :name, :surname, :country_code, :email, :email_verification, :phone, :phone_verification, :password, :personal_photo, :personal_photo_verified, :register_date, :admin_notes, :account_status)";
 
         try {
             $id = $this->query($sql, $params);
@@ -84,8 +84,9 @@ class User extends Model {
 
     public function Read(array $params = []): Result
     {
-        $sql = "SELECT user_id, user_type, gender, hidden_personality, name, surname, country_code, email, email_verification, phone, phone_verification, password, personal_photo, personal_photo_verification, register_date, admin_notes, user_status
-            FROM users";
+        $sql = "SELECT a.account_id, a.account_type, a.gender, a.hidden_personality, a.name, a.surname, a.country_code, IFNULL(c.country, '') AS country, a.email, a.email_verification, a.phone, a.phone_verification, a.password, a.personal_photo, a.personal_photo_verified, a.register_date, a.admin_notes, a.account_status
+            FROM accounts AS a
+            LEFT JOIN countries AS c ON c.country_code = a.country_code";
 
         $args = [
             'limit' => RECORDS_PER_PAGE,
@@ -95,32 +96,34 @@ class User extends Model {
         $filter = $this->buildSQLFilter(
             $params,
             array(
-                'user_id' =>             ['AND', 'user_id = :sf_user_id', [0, '0']],
-                'user_type'=>            ['AND', "user_type = :sf_user_type"],
-                'gender'=>                  ['AND', "gender = :sf_gender"],
-                'country_code'=>            ['AND', "country_code = :sf_country_code"],
-                'email'=>                   ['AND', "email = :sf_email"],
-                'phone'=>                   ['AND', "phone = :sf_phone"],
-                'register_date_from'=>      ['AND', "register_date >= :sf_register_date_from"],
-                'register_date_to'=>        ['AND', "register_date <= :sf_register_date_to"],
-                'admin_notes'=>             ['AND', "admin_notes LIKE CONCAT('%', :sf_admin_notes, '%')"],
-                'user_status'=>          ['AND', "user_status = :sf_user_status"]
+                'account_id' =>             ['AND', 'a.account_id = :sf_account_id', [0, '0']],
+                'account_type'=>            ['AND', "a.account_type = :sf_account_type"],
+                'gender'=>                  ['AND', "a.gender = :sf_gender"],
+                'country_code'=>            ['AND', "a.country_code = :sf_country_code"],
+                'email'=>                   ['AND', "a.email = :sf_email"],
+                'phone'=>                   ['AND', "a.phone = :sf_phone"],
+                'personal_photo_verified'=> ['AND', "a.personal_photo_verified = :sf_personal_photo_verified"],
+                'register_date_from'=>      ['AND', "a.register_date >= :sf_register_date_from"],
+                'register_date_to'=>        ['AND', "a.register_date <= :sf_register_date_to"],
+                'admin_notes'=>             ['AND', "a.admin_notes LIKE CONCAT('%', :sf_admin_notes, '%')"],
+                'account_status'=>          ['AND', "a.account_status = :sf_account_status"]
             ),
             'sf_'
         );
 
         $sql .= $filter->Query;
 
-        $sql .= " ORDER BY register_date DESC
+        $sql .= " ORDER BY a.register_date DESC
             LIMIT :limit OFFSET :offset;";
         
         // Adding meta data when reading all records
         $hasMeta = false;
-        if (($params['user_id']??0) == 0) {
+        if (($params['account_id']??0) == 0) {
             $hasMeta = true;
 
             $sql .= "SELECT COUNT(*) AS total_records, :limit AS records_per_page
-                FROM users";
+                FROM accounts AS a
+                LEFT JOIN countries AS c ON c.country_code = a.country_code";
             $sql .= $filter->Query.";";
         }
 
@@ -140,7 +143,7 @@ class User extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                'Failed to read users',
+                'Failed to read accounts',
                 'error'
             );
         }
@@ -156,7 +159,7 @@ class User extends Model {
 
     public function Update(array $params = []): Result
     {
-        $sql = "UPDATE users
+        $sql = "UPDATE accounts
             SET
                 hidden_personality = :hidden_personality,
                 name = :name,
@@ -166,7 +169,7 @@ class User extends Model {
                 phone = :phone,
                 password = IF(:password = '', password, :password),
                 personal_photo = :personal_photo
-            WHERE user_id = :user_id;";
+            WHERE account_id = :account_id;";
 
         // Don't update empty password
         if($params['password'] == hash('sha256', '')){
@@ -176,7 +179,7 @@ class User extends Model {
         try {
             if($this->query($sql, $params)){
                 return new Result(
-                    $params['user_id']
+                    $params['account_id']
                 );
             }
 
@@ -191,12 +194,12 @@ class User extends Model {
 
     public function Delete(array $params = []): Result
     {
-        $sql = "DELETE FROM users WHERE user_id = :user_id";
+        $sql = "DELETE FROM accounts WHERE account_id = :account_id";
 
         try {
             if($this->query($sql, $params)){
                 return new Result(
-                    $params['user_id']
+                    $params['account_id']
                 );
             }
 
@@ -210,8 +213,8 @@ class User extends Model {
     }
 
     public function Login(array $params = []):Result{
-        $sql = "SELECT user_id, user_type, name, user_status
-            FROM users
+        $sql = "SELECT account_id, account_type, name, surname, account_status
+            FROM accounts
             WHERE (email = :email_phone OR phone = :email_phone) AND password = :password
             LIMIT 1;";
 

@@ -12,8 +12,8 @@ return [
     'home'=>[
         'title'=>App::loc('Home', 'en'),
         'description'=> '',
-        'keywords'=>'',
-        'image'=>WEBSITE_URL . '/img/og-home-image.png'
+        'keywords'=> '',
+        'image'=> WEBSITE_URL . '/img/og-home-image.png'
     ],
 ];
 ?>

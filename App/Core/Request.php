@@ -66,7 +66,7 @@ class Request
     public static function body(){
         static $cache = null;
         
-        if(!is_null($cache)){
+        if(!empty($cache)){
             return $cache;
         }
         

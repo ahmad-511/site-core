@@ -1,10 +1,11 @@
-export default class EventEimitter {
+export default class EventEmitter {
     
     listeners = [];
 
+    // Emit an event with multiple number of arguments
     emit(eventName, ...data){
         for(let {callback} of this.listeners.filter(l => l.name == eventName)){
-            return callback(...data);
+            callback(...data);
         }
     }
 

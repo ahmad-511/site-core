@@ -7,16 +7,16 @@ class App{
     /**
      * Used inside a layout file,
      * Include HTML page's meta tags (description, keywords, title, social og:title, og:description, og:image, og:url, twitter:card)
-     * @param string $pageCode (viewCode)
+     * @param string $viewCode
      */
-    public static function includeMeta($pageCode){
-        $meta = require_once __DIR__ .'/page-meta-'.Router::getCurrentLocaleCode().'.php';
+    public static function includeMeta($viewCode){
+        $meta = require_once __DIR__ .'/../configs/page-meta-'.Router::getCurrentLocaleCode().'.php';
     
-        if(!array_key_exists($pageCode, $meta)){
+        if(!array_key_exists($viewCode, $meta)){
             return false;
         }
     
-        $pageMeta = $meta[$pageCode];
+        $pageMeta = $meta[$viewCode];
     
         if(array_key_exists('description', $pageMeta)){
             echo '<meta name="description" content="', $pageMeta['description'], '">', "\n";
@@ -29,14 +29,14 @@ class App{
         if(array_key_exists('title', $pageMeta)){
             echo '<title>', $pageMeta['title'], ' | ', WEBSITE_TITLE, '</title>', "\n";
         }else{
-            echo '<title>', ucwords($pageCode), ' | ', WEBSITE_TITLE, '</title>', "\n";
+            echo '<title>', ucwords($viewCode), ' | ', WEBSITE_TITLE, '</title>', "\n";
         }
 
         // Social related tags
         if(array_key_exists('title', $pageMeta)){
             echo '<meta property="og:title" content="', $pageMeta['title'], ' | ', WEBSITE_TITLE, '">';
         }else{
-            echo '<meta property="og:title" content="', ucwords($pageCode), ' | ', WEBSITE_TITLE, '">';
+            echo '<meta property="og:title" content="', ucwords($viewCode), ' | ', WEBSITE_TITLE, '">';
         }
 
         if(array_key_exists('description', $pageMeta)){
@@ -61,18 +61,18 @@ class App{
     /**
      * Used inside a layout file,
      * Include page related files (css, js, js/module)
-     * @param string $pageCode (viewCode)
+     * @param string $viewCode (viewCode)
      */
-    public static function includeFiles($pageCode){
-        $files = require_once __DIR__ .'/page-files.php';
+    public static function includeFiles($viewCode){
+        $files = require_once __DIR__ .'/../configs/page-files.php';
     
         $pageFiles = [];
         if(array_key_exists('*', $files)){
             $pageFiles = $files['*'];
         }
     
-        if(array_key_exists($pageCode, $files)){
-            foreach($files[$pageCode] as $type => $items){
+        if(array_key_exists($viewCode, $files)){
+            foreach($files[$viewCode] as $type => $items){
                 if(array_key_exists($type, $pageFiles)){
                     $pageFiles[$type] = array_merge($pageFiles[$type], $items);
                 }
@@ -107,8 +107,8 @@ class App{
      * @param string $pagecode (viewCode)
      * @return string selected | ''
      */
-    public static function setSelectedPage($pageCode){
-        return ($pageCode == Router::getCurrentViewCode())?'selected':'';
+    public static function setSelectedPage($viewCode){
+        return ($viewCode == Router::getCurrentViewCode())?'selected':'';
     }
     
     /**

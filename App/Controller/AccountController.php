@@ -5,28 +5,28 @@ namespace App\Controller;
 use App\Core\Controller;
 use App\Core\App;
 use App\Core\Auth;
-use App\Model\User;
+use App\Model\Account;
 use App\Core\Validator;
 use App\Core\ValidationRule;
 use App\Core\Result;
 use App\Core\Router;
 
-class UserController extends Controller
+class AccountController extends Controller
 {
-    private User $user;
+    private Account $account;
     private array $data = [];
     private array $search;
     private Validator $validator;
 
     public function __construct(array $data = [])
     {
-        $this->account = new User();
+        $this->account = new Account();
 
         // Setup defaults
         $data['account_id'] ??= 0;
         $data['account_type'] ??= 'User'; // User, Admin
         $data['gender'] ??= 'M'; // M, F
-        $data['hidden_personality'] ??= 0; // When gender is F user can set this to hide photo, email and phone from gender M
+        $data['hidden_personality'] ??= 0; // When gender is F account can set this to hide photo, email and phone from gender M
         $data['name'] ??= '';
         $data['surname'] ??= '';
         $data['country_code'] ??= '';
@@ -36,8 +36,8 @@ class UserController extends Controller
         $data['phone_verification'] ??= '';
         $data['password'] ??= '';
         $data['personal_photo'] ??= '';
-        $data['personal_photo_verification'] ??= '';
-        $data['register_date'] = date('Y-m-d H:i:s');
+        $data['personal_photo_verified'] ??= 0;
+        $data['register_date'] ??= date('Y-m-d H:i:s');
         $data['admin_notes'] ??= '';
         $data['account_status'] ??= 'Pending'; // Pending, Active, Suspended
 
@@ -62,12 +62,30 @@ class UserController extends Controller
         $this->validator->add('password', 'Password is missing', ValidationRule::notEmpty());
     }
 
+    private function generateEmailVerification($email): string{
+        return md5($email . microtime() . date('YmdHis'));
+    }
+
+    private function generatePhoneVerification(): string{
+        return (string) random_int(10000, 99999);
+    }
+
+    // Guard: User
+    public function Signup(array $routeParams = []): Result
+    {
+        $this->data['account_type'] = 'User';
+        $this->data['account_status'] = 'Pending';
+
+        return $this->Create($routeParams);
+    }
+
+    // Guard: Admin
     public function Create(array $routeParams = []): Result
     {
         if($dataErr = $this->validator->validate(['account_id'])){
             return new Result(
                 $dataErr,
-                'Some data are missing or invalid',
+                App::loc('Some data are missing or invalid'),
                 'validation_error'
             );
         }
@@ -86,7 +104,7 @@ class UserController extends Controller
         if($resDuplicate->data > 0){
             return new Result(
                 null,
-                "Account exists with ID #{$resDuplicate->data}",
+                sprintf(App::loc('Account exists with ID #%s'), $resDuplicate->data),
                 'error'
             );
         }
@@ -99,13 +117,13 @@ class UserController extends Controller
             'surname' => $this->data['surname'],
             'country_code' => $this->data['country_code'],
             'email' => $this->data['email'],
-            'email_verification' => md5($this->data['email'] . microtime()), // embed in a link
+            'email_verification' => $this->generateEmailVerification($this->data['email']), // embed in a link
             'phone' => $this->data['phone'],
-            'phone_verification' => random_int(10000, 99999), // send in SMS
+            'phone_verification' => $this->generatePhoneVerification(), // send in SMS
             'password' => $this->data['password'],
             'personal_photo' => $this->data['personal_photo'],
-            'personal_photo_verification' => 'No', // manual by admin
-            'register_date' => $this->data['register_date'],
+            'personal_photo_verified' => 0, // manual by admin
+            'register_date' => date('Y-m-d H:i:s'),
             'admin_notes' => $this->data['admin_notes'],
             'account_status' => $this->data['account_status']
         ]);
@@ -127,13 +145,22 @@ class UserController extends Controller
 
         return new Result(
             $resRead->data,
-            'Account created',
+            App::loc('Account created'),
             'success',
             '',
             $resRead->metaData
         );
     }
 
+    // Guard: User
+    public function Profile(array $routeParams = []): Result
+    {
+        $routeParams['account_id'] = Auth::getUser('account_id');
+
+        return $this->Read($routeParams);
+    }
+    
+    // Guard: Admin
     public function Read(array $routeParams = []): Result
     {
         $isOneRecord = false;
@@ -166,12 +193,52 @@ class UserController extends Controller
         );
     }
 
+    // Guard: User
+    public function UpdateProfile(array $routeParams = []): Result
+    {
+        $this->data['account_id'] = Auth::getUser('account_id');
+        
+        $resAccount = $this->account->Read(['account_id' => $this->data['account_id']]);
+        if(empty($resAccount->data)){
+            return new Result(
+                null,
+                App::loc('Profile not found'),
+                'error'
+            );
+        }
+
+        // Don't let normal user to change these properites
+        $this->data['account_type'] = $resAccount[0]['account_type'];
+        $this->data['gender'] = $resAccount[0]['gender'];
+        $this->data['account_status'] = $resAccount[0]['account_status'];
+        
+        // Check if email, phone or photo have been changed
+        $this->data['email_verification'] = $resAccount[0]['email_verification'];
+        $this->data['phone_verification'] = $resAccount[0]['phone_verification'];
+        $this->data['personal_photo_verified'] = $resAccount[0]['personal_photo_verified'];
+
+        if($resAccount[0]['email'] != $this->data['email']){
+            $this->data['email_verification'] = $this->generateEmailVerification($this->data['email']);
+        }
+
+        if($resAccount[0]['phone'] != $this->data['phone']){
+            $this->data['phone_verification'] = $this->generatePhoneVerification($this->data['email']);
+        }
+
+        if($resAccount[0]['personal_photo'] != $this->data['personal_photo']){
+            $this->data['personal_photo_verified'] = 0;
+        }
+
+        return $this->Update($routeParams);
+    }
+
+    // Guard: Admin
     public function Update(array $routeParams = []): Result
     {
-        if($dataErr = $this->validator->validate(['account_id', 'account_type', 'gender', 'hidden_personality', 'name', 'surname'])){
+        if($dataErr = $this->validator->validateOnly(['account_id', 'account_type', 'gender', 'hidden_personality', 'name', 'surname'])){
             return new Result(
                 $dataErr,
-                'Some data are missing or invalid',
+                App::loc('Some data are missing or invalid'),
                 'validation_error'
             );
         }
@@ -191,22 +258,27 @@ class UserController extends Controller
         if($resDuplicate->data > 0){
             return new Result(
                 null,
-                "Account exists with ID #{$resDuplicate->data}",
+                sprintf(App::loc('Account exists with ID #%s'), $resDuplicate->data),
                 'error'
             );
         }
 
         $resUpdate = $this->account->Update([
             'account_id' => $this->data['account_id'],
+            'gender' => $this->data['gender'],
             'hidden_personality' => $this->data['hidden_personality'],
             'name' => $this->data['name'],
             'surname' => $this->data['surname'],
             'country_code' => $this->data['country_code'],
             'email' => $this->data['email'],
+            'email_verification' => $this->data['email_verification'],
             'phone' => $this->data['phone'],
+            'phone_verification' => $this->data['phone_verification'],
             'password' => $this->data['password'],
             'personal_photo' => $this->data['personal_photo'],
-            'personal_photo_verification' => 'No' // manual by admin
+            'personal_photo_verified' => $this->data['personal_photo_verified'],
+            'admin_notes' => $this->data['admin_notes'],
+            'account_status' => $this->data['account_status']
         ]);
 
         // DB Error
@@ -231,19 +303,32 @@ class UserController extends Controller
 
         return new Result(
             $resRead->data,
-            'Account updated',
+            App::loc('Account updated'),
             'success',
             '',
             $resRead->metaData
         );
     }
 
+    // Guard: User
+    public function DeleteProfile(array $routeParams = []): Result
+    {
+        $this->data['account_id'] = Auth::getUser('account_id');
+
+        return $this->Delete($routeParams);
+    }
+
+    // Guard: Admin
     public function Delete(array $routeParams = []): Result
     {
-        if($resReferenced = $this->account->isReferenced()){
+        $resReferenced = $this->account->isReferenced([
+            'account_id' => $this->data['account_id']
+        ]);
+
+        if($resReferenced->data){
             return new Result(
                 $resReferenced->data,
-                'Account is referenced by',
+                App::loc('Account is referenced by'),
                 'reference_error',
                 ''
             );
@@ -252,7 +337,7 @@ class UserController extends Controller
         if ($this->account->Delete(['account_id' => $this->data['account_id']])){
             return new Result(
                 $this->data['account_id'],
-                'Account deleted',
+                App::loc('Account deleted'),
                 'success',
                 ''
             );
@@ -260,12 +345,13 @@ class UserController extends Controller
 
         return new Result(
             null,
-            'Failed to delete user',
+            App::loc('Failed to delete account'),
             'error',
             ''
         );
     }
 
+    // Guard: None
     public function Login(Array $routeParams=[]){
         $this->validator->add('email_phone', 'Invalid email or phone number', function(){
             return ValidationRule::email() || ValidationRule::regexp('#[+0]?[0-9\s]{4,12}#');
@@ -274,7 +360,7 @@ class UserController extends Controller
         if($dataErr = $this->validator->validateOnly(['email_phone'])){
             return new Result(
                 $dataErr,
-                'Some data are missing or invalid',
+                App::loc('Some data are missing or invalid'),
                 'validation_error'
             );
         }
@@ -294,19 +380,19 @@ class UserController extends Controller
         if ($resLogin->data === false || empty($resLogin->data)) {
             return new Result(
                 [],
-                'Login failed',
+                App::loc('Login failed'),
                 'error',
                 ''
             );
         }
 
-        $userData = $resLogin->data[0];
+        $accountData = $resLogin->data[0];
 
         // Check account status
-        if($userData['account_status'] != 'Active'){
+        if($accountData['account_status'] != 'Active'){
             return new Result(
-                $userData,
-                sprintf(App::loc('Your account is %s'), App::loc($userData['account_status'])),
+                $accountData,
+                sprintf(App::loc('Your account is %s'), App::loc($accountData['account_status'])),
                 'error',
                 ''
             );
@@ -327,6 +413,7 @@ class UserController extends Controller
         );
     }
 
+    // Guard: None
     public function Logout(Array $routeParams=[]){
         if(!Auth::isLoggedIn()){
             return new Result(

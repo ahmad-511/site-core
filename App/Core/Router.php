@@ -24,6 +24,8 @@ class Router{
     private static string $CurrentViewCode = '';
     private static string $CurrentLocaleCode = '';
 
+    private static $ViewContent = '';
+
     /**
      * Set home page code
      * @param string $homePageCode Home page code used to detect whether or not current page is the home page so we can omit the code from the url
@@ -118,6 +120,14 @@ class Router{
      */
     public static function getCurrentLocaleCode(){
         return self::$CurrentLocaleCode;
+    }
+
+    /**
+     * Get current view content
+     * @return string View content
+     */
+    public static function getViewContent(){
+        return self::$ViewContent;
     }
 
     /**
@@ -234,6 +244,14 @@ class Router{
     */
     public static function getViewPath($viewCode = '', $localeCode = '')
     {
+        if(empty($localeCode)){
+            $localeCode = self::$DefaultLocale;
+        }
+
+        if(!empty($localeCode)){
+            $localeCode .= DIRECTORY_SEPARATOR;
+        }
+
         $viewPath = self::$ViewsDir .$localeCode. $viewCode . '.php';
 
         // Get default page if locale version doesn't exist
@@ -413,8 +431,8 @@ class Router{
         }
     }
 
-    /** Load view content with currently used layout */
-    public static function loadView($viewCode, $requestParams, $localeCode = null){
+    /** Load view content */
+    public static function loadViewContent($viewCode, $requestParams, $localeCode = null){
         // Get view's locale code if not passed
         if(empty($localeCode)){
             $localeCode = self::getLocaleCode($viewCode);
@@ -443,6 +461,13 @@ class Router{
             $viewContent = ob_get_clean();    
         }
 
+        return $viewContent;
+    }
+    
+    /** Load view content with currently used layout */
+    public static function loadView($viewCode, $requestParams, $localeCode = null){
+        $viewContent = self::loadViewContent($viewCode, $requestParams, $localeCode);
+
         // Load layout file template
         self::loadLayout($viewContent);
     }
@@ -451,6 +476,8 @@ class Router{
      *  echo $viewContent inside it as a place holder for the current view
      */
     public static function loadLayout($viewContent = ''){
+        self::$ViewContent = $viewContent;
+
         $layout = (self::$CurrentLayout?? 'main') . '.php';
 
         include self::$ViewsDir . 'layouts'. DIRECTORY_SEPARATOR . $layout ;
@@ -462,8 +489,8 @@ class Router{
      * @return $viewCode if access allowed, redirectCode/accessDeniedView code otherwise
      */
     public static function viewAccessGuard($viewCode){
-        $res = Guard::canAccess($viewCode);
-        $canAccess = $res->canAccess ?? false;
+        $res = Guard::canView($viewCode);
+        $isAllowed = $res->isAllowed ?? false;
         $redirectCode = $res->redirectCode ?? '';
 
         // Save current path for later use when redirect code is present
@@ -473,7 +500,7 @@ class Router{
         }
 
         // If access allowed for current user then load specified view
-        if ($canAccess) {
+        if ($isAllowed) {
             return $viewCode;
         }
         
@@ -494,7 +521,7 @@ class Router{
      * @return bool true if allowed, false otherwise
     */
     public static function controllerExecutionGuard($controller, $method){
-        return Guard::methodAllowed($controller, $method);
+        return Guard::canExecute($controller, $method);
     }
 
     /**

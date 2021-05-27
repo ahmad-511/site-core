@@ -5,12 +5,12 @@ namespace App\Core;
 use App\Core\Auth;
 
 class GuradResult{
-    public bool $canAccess;
+    public bool $isAllowed;
     public string $redirectCode;
 
-    public function __construct($canAccess = true, $redirectCode = '')
+    public function __construct($isAllowed = true, $redirectCode = '')
     {
-        $this->canAccess = $canAccess;
+        $this->isAllowed = $isAllowed;
         $this->redirectCode = $redirectCode;
     }
 }
@@ -21,7 +21,7 @@ class Guard {
      * @param string $viewCode View code
      * @return GuardResult
      */
-    public static function canAccess($viewCode)
+    public static function canView($viewCode): GuradResult
     {
         $loginRequired = [
             'dashboard',
@@ -43,7 +43,7 @@ class Guard {
      * @param string $method Controller's method name
      * @return bool whether or not execution is allowed
      */
-    public static function methodAllowed($controller, $method)
+    public static function canExecute($controller, $method)
     {
         $loggedInOnlyMethods = [
             'Account|Create',

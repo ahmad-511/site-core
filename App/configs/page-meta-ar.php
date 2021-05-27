@@ -12,10 +12,10 @@ return [
     'home'=>[
         'title'=>App::loc('Home', 'ar'),
         'description'=> '',
-        'keywords'=>'',
-        'image'=>WEBSITE_URL . '/img/og-home-image.png',
-        'url' =>'',
-        'card' =>''
+        'keywords'=> '',
+        'image'=> WEBSITE_URL . '/img/og-home-image.png',
+        'url' => '',
+        'card' => ''
     ],
 ];
 ?>
