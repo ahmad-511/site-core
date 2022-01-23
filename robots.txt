@@ -1,1 +1,5 @@
-Sitemap: http://etesalatak.com/sitemap.xml
+#Default robots.txt file (which asks all bots to crawl slowly but still index everything).
+User-agent: *
+Crawl-delay: 1
+Disallow:
+Sitemap: https://this-domain.com/sitemap.xml
