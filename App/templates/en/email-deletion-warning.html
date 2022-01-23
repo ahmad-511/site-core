@@ -1,0 +1,19 @@
+@include email-header
+
+    <p>Hello once again {name}</p>
+    <p>It has been {pending_days} days since you signed up for <a href="{WEBSITE_URL}">{WEBSITE_TITLE}</a> services</p>
+    <p>We sent you this message to remind you that you need to take the necessary action and verify your account or your it will be automatically deleted in a period of {extended_days} days</p>
+    
+    <ul>
+        <li>First we need to verify your registered email so click <a href="{email_verification_view_url}">Verify now</a></li>
+        <li>Find the SMS we sent you before containing a verification code to your registered mobile <b>{mobile}</b> and <a href="{login_view_url}">log in to your account</a>, go to <a href="{mobile_verification_view_url}">Mobile number verification</a> page, type in the code in the specified box and then click <b>Verify</b></li>
+    </ul>
+    
+    <p>Once your email is verified you can <a href="{login_view_url}">login to your account</a> and start performing some basic management tasks</p>
+    
+    <p>One of our staff members will then check your data and activate your account if everything look good</p>
+    <p>After that you'll be able to fully use our services</p>
+    
+    <p>Thanks</p>
+
+@include email-footer

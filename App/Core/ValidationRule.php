@@ -21,7 +21,7 @@ class ValidationRule {
      */
     public static function boolean(){
         return function($value){
-            return filter_var($value, FILTER_VALIDATE_BOOL) !== false;
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN) !== false;
         };
     }
 
@@ -38,12 +38,12 @@ class ValidationRule {
     }
 
     /**
-     * Check if value is a positive number
+     * Check if value is a number
      * @param int $min (optional) the minimum accepted value
      * @param int $max (optional) the maximum accepted value
      * @return callable
      */
-    public static function positive(float $min = 0, float $max = PHP_INT_MAX){
+    public static function number(float $min = 0, float $max = PHP_INT_MAX){
         return function($value)use($min, $max){
             return filter_var($value, FILTER_VALIDATE_FLOAT, array( 'options' => array( 'min_range' => $min, 'max_range' => $max))) !== false;
         };
@@ -63,6 +63,17 @@ class ValidationRule {
     }
 
     /**
+     * Check if value is a json string
+     * @return callable
+     */
+    public static function json(){
+        return function($value){
+            json_decode($value);
+            return (json_last_error() == JSON_ERROR_NONE);
+        };
+    }
+
+    /**
      * Check if value is noe empty
      * @return callable
      */
@@ -78,7 +89,20 @@ class ValidationRule {
      */
     public static function date(){
         return function($value){
-            return date_parse($value) !== false;
+            $res = date_parse($value);
+            return $res !== false && $res['error_count'] == 0 && $res['year'] !== false && $res['month'] !== false && $res['day'] !== false;
+        };
+    }
+
+    /**
+     * Check if value is a time
+     * @return callable
+     */
+    public static function time(){
+        return function($value){
+            $res = date_parse($value);
+            return $res !== false && $res['error_count'] == 0 && $res['hour'] !== false && $res['minute'] !== false && $res['second'] !== false;
+
         };
     }
 

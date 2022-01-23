@@ -1,0 +1,29 @@
+.checklist {
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+    max-height: 300px;
+    border: solid 1px #bdbdbd;
+    border-radius: 4px;
+    overflow: auto;
+}
+
+.checklist > * {
+    padding: 2px 4px;
+}
+
+.checklist span {
+    margin-left: 5px;
+}
+
+label.checklist-group {
+    text-transform: uppercase;
+}
+
+.checklist-group ~ label {
+    margin-left: 1rem;
+}
+
+label ~ .checklist-group {
+    margin-left: 0;
+}

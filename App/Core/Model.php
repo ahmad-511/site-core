@@ -18,6 +18,11 @@ abstract class Model{
         return DB::query($sql, $params);
     }
 
+    /** Get affected rows count by latest statement ec=xecution */
+    protected function rowCount(): int{
+        return DB::getRowCount();
+    }
+
     /**
      * Sanitize comma separated string to be safely used inside an IN function
      * @param string $csv Comma separated values

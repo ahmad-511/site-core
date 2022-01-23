@@ -1,0 +1,62 @@
+.prompt-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    outline: none;
+    background-color: rgba(50, 50, 50, .8);
+    z-index: 9999;
+}
+
+.prompt-form {
+    position: relative;
+    padding: 10px;
+    border-radius: 5px;
+    outline: none;
+    color: #424242;
+    background-color: #fafafa;
+    box-shadow: #000 0 0 10px;
+}
+
+.prompt-close {
+    display: inline-block;
+    position: absolute;
+    height: 30px;
+    width: 30px;
+    padding: 4px;
+    top: -10px;
+    right: -10px;
+    border-radius: 50%;
+    line-height: 1;
+    font-size: 20px;
+    text-align: center;
+    color: #fff;
+    background-color: #212121;
+    cursor: pointer;
+}
+
+.prompt-description {
+    margin-top: 10px;
+    max-width: 400px;
+    min-width: 200px;
+    font-size: larger;
+}
+
+.prompt-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* RTL Rules */
+
+[dir = 'rtl'] .prompt-close {
+    right: auto;
+    left: -10px;
+}

@@ -1,0 +1,28 @@
+@include email-header
+
+    <p>Thank you {name} for signing up to {WEBSITE_TITLE} services</p>
+    <p>Your account is created but you still need to do some extra steps for us to verify your registration data</p>
+    
+    <ul>
+        <li>First we need to verify your registered email so click <a href="{email_verification_view_url}">Verify now</a></li>
+        <li>We also want you to send us an SMS containing the following verification code <b>{mobile_verification_code}</b> to our SMS dedicated number <b>{sms_virtual_number}</b> from your registered mobile number <b>{mobile}</b>, after that <a href="{my_profile_view_url}">login to your profile</a> and check your mobile verification status</li>
+    </ul>
+    
+    <p>Once your email is verified you can <a href="{login_view_url}">login to your account</a></p>
+    
+    <ul>
+        <li><a href="{my_profile_view_url}">Navigate to your profile</a> and upload a clear photo of your face if you didn't already</li>
+        <li><a href="{my_cars_view_url}">Navigate to your cars</a> and register your cars if any</li>
+    </ul>
+
+    <p>One of our staff members will then check your data and activate your account within 24 hours max</p>
+    <p>After that you'll be able to use our services</p>
+    
+    <p>Note:<br>
+        if you didn't verify your email and mobile within {verification_period} days, your account will be deleted automatically.
+    </p>
+
+    <p>If you did not signup to our services or you changed your mind please feel free to ignore this message</p>
+    <p>Thanks</p>
+
+@include email-footer

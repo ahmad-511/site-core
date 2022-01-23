@@ -1,6 +1,6 @@
 <?php
-use App\Core\Router;
 use App\Core\App;
+use App\Core\Router;
 
 $pageDir = (Router::getCurrentLocaleCode() == 'ar')?'rtl':'ltr';
 ?>
@@ -25,36 +25,32 @@ $pageDir = (Router::getCurrentLocaleCode() == 'ar')?'rtl':'ltr';
 
     <meta name="robots" content="robots.txt">
     
-    <?php App::includeMeta(Router::getCurrentViewCode());?>
+    <?php App::includeMeta(Router::getCurrentFileName(true));?>
 
-    <link rel="canonical" href="<?= WEBSITE_URL, '/', Router::routeUrl(Router::getCurrentViewCode())?>">
+    <link rel="canonical" href="<?= WEBSITE_URL, Router::routeUrl(Router::getCurrentRouteName())?>">
 
     <?php
         foreach(Router::getLocales() as $l){
-            echo '<link rel="alternate" hreflang="', $l, '" href="',WEBSITE_URL, '/', Router::routeUrl(Router::getCurrentViewCode(), null, $l), '">', "\n";
+            echo '<link rel="alternate" hreflang="', $l, '" href="',WEBSITE_URL, Router::routeUrl(Router::getCurrentRouteName(), null, $l), '">', "\n";
         }
     ?>
 
-    <link rel="alternate" hreflang="x-default" href="<?= WEBSITE_URL, '/',  Router::routeUrl(Router::getCurrentViewCode())?>">
+    <link rel="alternate" hreflang="x-default" href="<?= WEBSITE_URL, Router::routeUrl(Router::getCurrentRouteName())?>">
 
     <?php
-        App::includeFiles(Router::getCurrentViewCode());
-        
-        if($pageDir == 'rtl'){
-            echo '<link rel="stylesheet" href="App/css/style-rtl.css">'."\n";
-        }
+        App::includeFiles(Router::getCurrentFileName());
     ?>
 </head>
 
-<body class="view-<?= Router::getCurrentViewCode()?>">
+<body class="<?= strtolower(Router::getCurrentFileName(true)), '-view'?>">
 
-<?php include __DIR__ . '/../partials/header.php' ?>
+<?php Router::renderContent('partials/header') ?>
 
 <main>
     <?= Router::getViewContent() ?>
 </main>
 
-<?php include __DIR__ . '/../partials/footer.php' ?>
+<?php Router::renderContent('partials/footer') ?>
 
 <?php if(MAINTENANCE_MODE):?>
     <div class="maintenance-mode">

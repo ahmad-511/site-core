@@ -6,9 +6,9 @@ class Validator {
     private $object = [];
     private $validations = [];
 
-    public function __construct($object)
+    public function __construct(&$object)
     {
-        $this->object = $object;
+        $this->object = &$object;
         $this->validations = [];
     }
 

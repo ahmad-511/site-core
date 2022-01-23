@@ -49,8 +49,10 @@ class Response{
     public static function send($result, int $statusCode = 200, array $headers = ['Content-Type: application/json']) {
         self::setStatus($statusCode);
         self::setHeaders($headers);
-
-        echo json_encode($result, JSON_THROW_ON_ERROR, 512);
+        
+        if(!is_null($result)){
+            echo json_encode($result, JSON_THROW_ON_ERROR, 512);
+        }
     
         exit();
     }

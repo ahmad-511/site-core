@@ -7,8 +7,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Result;
 use App\Core\Route;
+use App\Core\GuradResult;
 
 class Router{
+    private static bool $AutoRouting = true;
     private static string $HomePageCode = 'home';
     private static array $Locales = ['en'];
     private static string $DefaultLocale = 'en';
@@ -18,13 +20,24 @@ class Router{
     private static string $PageNotFoundView = 'page-not-found';
     private static string $RedirectViewSession = 'redirect_view';
     
+    private static bool $CaseSensitivity = true;
     private static string $CurrentLayout = 'main';
     private static array $Routes = [];
 
-    private static string $CurrentViewCode = '';
+    private static string $CurrentRouteName = '';
     private static string $CurrentLocaleCode = '';
+    private static string $CurrentFileName = '';
 
     private static $ViewContent = '';
+
+    /**
+     * Enabled/Disable auto routing 
+     * @param bool $autoRouting when true Router will try to guess the correct route (custom routes take precedence)
+     * @return void
+     */
+    public static function setAutoRouting(bool $autoRouting = true){
+        self::$AutoRouting = $autoRouting;
+    }
 
     /**
      * Set home page code
@@ -63,7 +76,7 @@ class Router{
 
     /**
      * Define a specific locale codes for specific views, this will overwrite locale code passed in the request to force rendering views in one language 
-     * @param Array $localMapper Associative array of [viewCode => localeCode]
+     * @param Array $localMapper Associative array of [route name => locale code]
      * @return void
      */
     public static function setLocaleMapper(array $localMapper = []){
@@ -107,11 +120,32 @@ class Router{
     }
 
     /**
+     * Set custom route's case sensitivity checking mode
+     * @param bool $isCaseSensitive true: case sensitive, false: case insensitive
+     * @return void
+     */
+    public static function setCaseSensitivity(bool $isCaseSensitive = true){
+        self::$CaseSensitivity = $isCaseSensitive;
+    }
+
+    /**
      * Get current loaded view code
      * @return string View code
      */
-    public static function getCurrentViewCode(){
-        return self::$CurrentViewCode;
+    public static function getCurrentRouteName(){
+        return self::$CurrentRouteName;
+    }
+
+    /**
+     * Get current loaded view file name
+     * @return string file name
+     */
+    public static function getCurrentFileName(bool $excludeDir = false){
+        if($excludeDir){
+            return basename(self::$CurrentFileName);
+        }
+        
+        return self::$CurrentFileName;
     }
 
     /**
@@ -119,7 +153,7 @@ class Router{
      * @return string Locale code
      */
     public static function getCurrentLocaleCode(){
-        return self::$CurrentLocaleCode;
+        return strtolower(self::$CurrentLocaleCode);
     }
 
     /**
@@ -161,14 +195,14 @@ class Router{
         self::$Routes[] = $route;
     }
 
-    /** Get locale code for current request or for specified view code
-     * @param string $viewCode View code (optional) to get the locale code for it
+    /** Get locale code for current request or specified route name
+     * @param string $routeName View route name or file name (optional) to get the locale code for it
      * @return string Locale code
     */ 
-    public static function getLocaleCode($viewCode = ''){
+    public static function getLocaleCode($routeName = ''){
         // Try to get locale code from Locale Mapper
-        if(!empty($viewCode) && array_key_exists($viewCode, self::$LocaleMapper)){
-            return self::$LocaleMapper[$viewCode];
+        if(!empty($routeName) && array_key_exists($routeName, self::$LocaleMapper)){
+            return self::$LocaleMapper[$routeName];
         }
 
         // Get locale code using the first sigment from the request url
@@ -192,19 +226,20 @@ class Router{
      * @param string $routeName Route name
      * @param array $params Route parameters
      * @param string $localeCode Locale code
-     * @return string Localized url for the view with view code is words uppercased
+     * @param boolean $omitDefaultLocale Don't include locale code for default route locale
+     * @return string Localized url for the view with view code words uppercased
     */
-    public static function routeUrl($routeName, $params = [], $localeCode = ''){
+    public static function routeUrl($routeName, $params = [], $localeCode = '', $omitDefaultLocale = true){
         if(empty($localeCode)){
             $localeCode = strtolower(self::getLocaleCode($routeName));
         }
 
-        if($localeCode == self::$DefaultLocale){
+        if($omitDefaultLocale && $localeCode == self::$DefaultLocale){
             $localeCode = '';
         }
 
         if(!empty($localeCode)){
-            $localeCode .= '/';
+            $localeCode = '/' . $localeCode ;
         }
 
         // Check for custom route
@@ -220,8 +255,21 @@ class Router{
 
         if(!empty($path)){
             // Replace route params
-            foreach($params as $n => $v){
-                $path = str_replace('{'.$n.'}', $v, $path);
+            if(!empty($params)){
+                // Replace named params
+                foreach($params as $n => $v){
+                    $path = str_replace('{'.$n.'}', $v, $path);
+                }
+
+                // Replace un-named params
+                $path = preg_replace_callback("#\{.+?\}#", function($m) use($params) {
+                    static $counter = 0;
+                    if($counter < count($params)){
+                        return $params[$counter++];
+                    }else{
+                        return $m;
+                    }
+                }, $path);
             }
         }elseif(is_null($path)){ // Use route name as path for auto routes
             $path = ucwords($routeName);
@@ -232,17 +280,21 @@ class Router{
             }
         }
 
+        if(substr($path, 0, 1) != '/'){
+            $path = '/' . $path;
+        }
+
         return  strtoupper($localeCode) . $path;
     }
 
     /**
      * Get the view file path on the disk considering localized version
-     * @param string $viewCode View code to get its path
+     * @param string $fileName View file name to get its path
      * @param string $localeCode Language locale code
      * @return string Path on disk for localized version of the view if exists, fallback to original file location
      * 
     */
-    public static function getViewPath($viewCode = '', $localeCode = '')
+    public static function getViewPath($fileName = '', $localeCode = '')
     {
         if(empty($localeCode)){
             $localeCode = self::$DefaultLocale;
@@ -252,24 +304,33 @@ class Router{
             $localeCode .= DIRECTORY_SEPARATOR;
         }
 
-        $viewPath = self::$ViewsDir .$localeCode. $viewCode . '.php';
+        $viewPath = self::$ViewsDir .$localeCode. $fileName . '.php';
 
-        // Get default page if locale version doesn't exist
-        if (!file_exists($viewPath)) {
-            $viewPath = self::$ViewsDir . $viewCode . '.php';
-        }
-    
-        // Check if file path exists, if not return Page not found
-        if (!file_exists($viewPath)) {
-            return false;
+        if (file_exists($viewPath)) {
+            return $viewPath;
         }
         
-        return $viewPath;
+        // Get the page from the default locale folder if locale version doesn't exist
+        $viewPath = self::$ViewsDir . self::$DefaultLocale . DIRECTORY_SEPARATOR . $fileName . '.php';
+
+        if (file_exists($viewPath)) {
+            return $viewPath;
+        }
+        
+        // Get the page from view root if default locale version doesn't exist
+        $viewPath = self::$ViewsDir . $fileName . '.php';
+    
+        if (file_exists($viewPath)) {
+            return $viewPath;
+        }
+        
+        // Return false (Page not found)
+        return false;
     }
 
     public static function getPageNothFoundPath($localeCode = ''){
         // Use localized version of the page not found view
-        $path = self::$ViewsDir .$localeCode .self::$PageNotFoundView . '.php';
+        $path = self::$ViewsDir .$localeCode . DIRECTORY_SEPARATOR .self::$PageNotFoundView . '.php';
             
         // Use original page not found path
         if (!file_exists($path)) {
@@ -286,19 +347,28 @@ class Router{
 
     /** Routing starting point, called once in the index.php entry file */
     public static function resolve(){
-        // Check user defined routes
-        $reqMethod = strtolower(Request::getMethod());
-        $reqPath = Request::getPath();
+        $langCode = Request::getLocaleCode();
+        self::$CurrentLocaleCode = empty($langCode)?self::$DefaultLocale: $langCode;
 
         // Try to find custom route
-        if(!self::customRouting($reqMethod, $reqPath)){
+        if(!self::customRouting()){
             // Try auto routing procedure
-            self::autoRouting();
+            if(self::$AutoRouting){
+                self::autoRouting();
+            }else{
+                // Send only 404 response when requested path pointing to inexisting file
+                Response::setStatus(404);
+                self::renderView(self::$PageNotFoundView, []);
+            }
         }
     }
 
-    private static function customRouting($reqMethod, $reqPath){
+    private static function customRouting(){
+        $reqMethod = strtolower(Request::getMethod());
+        $reqPath = Request::getPath();
+
         $controller = '';
+
         foreach(self::$Routes as $route){
             if($route->method !='any' && $reqMethod != $route->method){
                 continue;
@@ -307,12 +377,17 @@ class Router{
             $quotedPath = preg_quote($route->path);
             $pattern = '#^' . preg_replace('/\\\{.+?\\\}/', '(.+?)', $quotedPath, -1, $paramsCount) . '$#';
 
+            if(!self::$CaseSensitivity){
+                $pattern .= 'i';
+            }
+
             $params = [];
 
-            // Find matched route
+            // Find matched route (ignoring locale code)
             if(preg_match($pattern, $reqPath, $pValues) === 1){
                 $controller = $route->controller;
-
+                self::$CurrentRouteName =  $route->name;
+                
                 // Extract route params
                 if($paramsCount > 0){
                     // Extract path params names
@@ -335,7 +410,7 @@ class Router{
         if(!empty($controller)){
             // When controller is a string it represents the view code
             if(is_string($controller)){
-                self::loadView($controller, $params);
+                self::renderView($controller, $params);
 
                 return true;
             }elseif(is_array($controller) && is_callable($controller)){
@@ -345,7 +420,7 @@ class Router{
             }elseif(is_callable($controller)){
                 // When controller is a function the view content must be returned by it
                 $viewContent = $controller($params);
-                self::loadLayout($viewContent);
+                self::renderLayout($viewContent);
                 
                 return true;
             }
@@ -356,49 +431,55 @@ class Router{
 
     // When no custom routing is specified for current request, fallback to auto routing procedure
     private static function autoRouting(){
-        $viewCode = self::getViewCode();
+        $routeName = self::getAutoRouteName();
+        self::$CurrentRouteName = $routeName;
 
         // Use $URISegments as method params for both views and controllers
         $URISegments = Request::getURISegments();
 
         // All API calls
-        if ($viewCode == 'api') {
+        if ($routeName == 'api') {
             $controller = $URISegments[1] ?? '';
             $method = $URISegments[2] ?? '';
 
             $controller = '\\App\\Controller\\'.$controller.'Controller';
+            self::$CurrentRouteName = $controller.'\\'.$method;
+
             // Execlude controller and method names from the params list
             self::executeController($controller, $method, array_slice($URISegments, 3));
 
             return;
         }else{
-            self::loadView($viewCode, $URISegments);
+            self::renderView($routeName, $URISegments);
 
             return;
         }
     }
 
     /** 
-     * Get view code from request url using first sigment (ingonring locale sigment)
-     * @return string View code from the first uri segment if it has one or more sigment (excluding locale code sigment), home page code otherwise
+     * Get route name from request url using first sigment (ingonring locale sigment)
+     * @return string Route name from the first uri segment if it has one or more sigment (excluding locale code sigment), home page code otherwise
     */
-    private static function getViewCode()
+    private static function getAutoRouteName()
     {
         $segments = Request::getURISegments();
-        $viewCode = strtolower($segments[0]??'');
+        $routeName = strtolower($segments[0]??'');
         
         // Use home page view code if nothing is specified
-        if (empty($viewCode)) {
-            $viewCode = self::$HomePageCode;
+        if (empty($routeName)) {
+            $routeName = self::$HomePageCode;
         }
 
-        return $viewCode;
+        return $routeName;
     }
 
     /** Execute controller method */
     public static function executeController($controller, $method, $params = []){
-        if (!self::controllerExecutionGuard($controller, $method)) {
-            $result = new Result(null, 'Method call not allowed', 'error');
+        $guardResult = self::controllerExecutionGuard($controller, $method);
+
+
+        if (!$guardResult->isAllowed) {
+            $result = new Result(null, $guardResult->message?? "You do not have necessary privileges to call $controller::$method", 'error', $guardResult->redirectFileName);
             Response::send($result, 403);
         }
 
@@ -418,7 +499,11 @@ class Router{
         // Call controller's method and pass all URI segments as params
         try {
             $result = $obj->$method($params);
-            // Set server message / Redirect 
+            // If result is null, the view is rendered from controller, ex: Router::renderView('view name')
+            if(is_null($result)){
+                return;
+            }
+
             if ($result instanceof Result) {
                 Response::send($result);
             } else {
@@ -430,25 +515,75 @@ class Router{
             Response::send($result, 500);
         }
     }
+    
+    /** Load view content with currently used layout */
+    public static function renderView($fileName, $params = [], $localeCode = null){
+        if(empty(self::$CurrentRouteName)){
+            self::$CurrentRouteName = $fileName;
 
-    /** Load view content */
-    public static function loadViewContent($viewCode, $requestParams, $localeCode = null){
-        // Get view's locale code if not passed
-        if(empty($localeCode)){
-            $localeCode = self::getLocaleCode($viewCode);
+            $isViewSuffix = substr(self::$CurrentRouteName, -strlen('-view'));
+            if($isViewSuffix != '-view'){
+                self::$CurrentRouteName .= '-view';
+            }
         }
 
-        $viewCode = self::viewAccessGuard($viewCode);
+        if(empty($localeCode)){
+            $localeCode = self::getCurrentLocaleCode();
+        }
 
-        $viewPath = self::getViewPath($viewCode, $localeCode);
+        $viewContent = self::loadViewContent($fileName, $params, $localeCode);
+        // Load layout file template
+        self::renderLayout($viewContent);
+    }
 
-        self::$CurrentViewCode = $viewCode;
+    /** Load view content */
+    private static function loadViewContent(string $fileName, array $params = [], $localeCode = null){
+        // If CurrentRouteName is not set by customRouting function then use the automatic one
+        if(empty(self::$CurrentRouteName)){
+            self::$CurrentRouteName = $fileName;
+
+            $isViewSuffix = substr(self::$CurrentRouteName, -strlen('-view'));
+            if($isViewSuffix != '-view'){
+                self::$CurrentRouteName .= '-view';
+            }
+        }
+        
+        [$redirectFileName, $guardMessage] = self::viewAccessGuard(self::$CurrentRouteName);
+        
+        if(!empty($redirectFileName)){
+            $fileName = $redirectFileName;
+        }
+
+        self::$CurrentFileName = $fileName;
+
+        // Get view's locale code if not passed
+        if(empty($localeCode)){
+            $localeCode = self::getLocaleCode($fileName);
+        }
+
         self::$CurrentLocaleCode = $localeCode;
+
+        // Add guard message (if any) in params
+        $params = $params??[];
+        $params['GUARD_MESSAGE'] = $guardMessage;
+
+        return self::renderContent($fileName, $params, $localeCode, true);
+    }
+
+    /** Render or return localized version of the specified file */
+    public static function renderContent(string $fileName, array $params = [], $localeCode = null, bool $return = false): string
+    {
+        // Get view's locale code if not passed
+        if(empty($localeCode)){
+            $localeCode = self::getLocaleCode($fileName);
+        }
+
+        $viewPath = self::getViewPath($fileName, $localeCode);
 
         // If view path not exists, switch to page not found view and set 404 response code
         if($viewPath === false){
             $viewPath = self::getPageNothFoundPath($localeCode);
-
+            self::$CurrentFileName = self::$PageNotFoundView;
             // Set page not found response status
             Response::setStatus(404);
         }
@@ -458,24 +593,22 @@ class Router{
         if (!empty($viewPath)) {
             ob_start();
             include $viewPath;
-            $viewContent = ob_get_clean();    
+            $viewContent = ob_get_clean();
         }
 
-        return $viewContent;
-    }
-    
-    /** Load view content with currently used layout */
-    public static function loadView($viewCode, $requestParams, $localeCode = null){
-        $viewContent = self::loadViewContent($viewCode, $requestParams, $localeCode);
+        if($return){
+            return $viewContent;
+        }
 
-        // Load layout file template
-        self::loadLayout($viewContent);
+        echo $viewContent;
+
+        return '';
     }
 
     /** Load current layout content
      *  echo $viewContent inside it as a place holder for the current view
      */
-    public static function loadLayout($viewContent = ''){
+    public static function renderLayout($viewContent = ''){
         self::$ViewContent = $viewContent;
 
         $layout = (self::$CurrentLayout?? 'main') . '.php';
@@ -485,32 +618,38 @@ class Router{
 
     /**
      * Check whether or not the current user is allowed to access specified view
-     * @param string $viewCode View code to check against current user permissions
-     * @return $viewCode if access allowed, redirectCode/accessDeniedView code otherwise
+     * @param string $routeName View code to check against current user permissions
+     * @return array [$routeName, $guardMessage], if access is allowed $routeName is empty string, otherwise it's redirectFileName/accessDeniedView
      */
-    public static function viewAccessGuard($viewCode){
-        $res = Guard::canView($viewCode);
-        $isAllowed = $res->isAllowed ?? false;
-        $redirectCode = $res->redirectCode ?? '';
+    public static function viewAccessGuard($routeName){
+        $guardResult = Guard::canView($routeName);
+        $isAllowed = $guardResult->isAllowed ?? false;
+        $redirectFileName = $guardResult->redirectFileName ?? '';
+        $guardMessage = $guardResult->message ?? '';
 
-        // Save current path for later use when redirect code is present
-        if(!empty($redirectCode)){
+        // Clear old saved url that requires login when navigating to another public url
+        if(empty($redirectFileName)){
+            if(!empty($_SESSION[self::$RedirectViewSession])){
+                unset($_SESSION[self::$RedirectViewSession]);
+            }
+        }else{
+            // Save current url for later use when redirect code is present
             $_SESSION[self::$RedirectViewSession] = $_SERVER['REQUEST_URI']??'';
-            $_SERVER['REQUEST_URI'] = $redirectCode;
+            $_SERVER['REQUEST_URI'] = '';
         }
 
         // If access allowed for current user then load specified view
         if ($isAllowed) {
-            return $viewCode;
+            return ['', $guardMessage];
         }
         
         // Return redirect view code if presents
-        if (!empty($redirectCode)) {
-            return $redirectCode;
+        if (!empty($redirectFileName)) {
+            return [$redirectFileName, $guardMessage];
         } else {
             // Set 403 forbidden response status and return access deinied view code
             Response::setStatus(403);
-            return self::$AccessDeniedView;
+            return [self::$AccessDeniedView, $guardMessage];
         }
     }
 
@@ -518,19 +657,19 @@ class Router{
      * Check whether or not the current user is allowed to execute specified controller method
      * @param string $controller Controller name
      * @param string $method Controller's method name
-     * @return bool true if allowed, false otherwise
+     * @return GuradResult true if allowed, false otherwise
     */
-    public static function controllerExecutionGuard($controller, $method){
-        return Guard::canExecute($controller, $method);
+    public static function controllerExecutionGuard($controller, $method):GuradResult{
+        return Guard::canExecute($controller, $method, self::$CurrentRouteName);
     }
 
     /**
      * Get last saved redirect view code
      * @return string Redirect code
     */
-    public static function getRedirectViewCode()
+    public static function getRedirectRouteName()
     {
-        $redirect = $_SESSION[self::$RedirectViewSession] ?? '';
+        $redirect = $_SESSION[self::$RedirectViewSession]?? '';
         
         if (!empty($redirect)) {
             unset($_SESSION[self::$RedirectViewSession]);

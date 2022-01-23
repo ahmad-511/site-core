@@ -1,0 +1,17 @@
+.stars-container {
+    display: flex;
+    gap: 2px;
+}
+
+.stars-container .star {
+    color: #9e9e9e;
+    cursor: pointer;
+}
+
+.stars-container.freezed .star {
+    cursor: auto;
+}
+
+.stars-container .star.checked {
+    color: #ff9800;
+}

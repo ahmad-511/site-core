@@ -1,0 +1,13 @@
+@include email-header
+
+    <div style="line-height: 1.5;">
+        <p style="margin:5px;">From: {name}</p>
+        <p style="margin:5px;">Email: {email}</p>
+    </div>
+    
+    <div style="padding: 10px;">
+        <h3>Message</h3>
+        <div style="background: #EEEEEE;padding: 10px; line-height: 1.6;white-space: pre-line;">{message}</div>
+    </div>
+
+@include email-footer

@@ -1,0 +1,14 @@
+@include email-header
+
+    <p>Hello {name}</p>
+    <p>You've got a new notification</p>
+
+    <div style="padding: 10px; border-radius: 5px; background-color: #eeeeee;">{notification}</div>
+   
+    <p style="margin: 30px 0; text-align: center;">
+        <a style="padding: 10px; border-radius: 5px; text-decoration: none; color: #fff; background-color: #2196f3;" target="_blank" href="{notification_link}">View details</a>
+    </p>
+
+    <p>With regards</p>
+
+@include email-footer

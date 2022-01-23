@@ -1,0 +1,17 @@
+@include email-header
+
+    <p>Hello {name}</p>
+    <p>Your email has been changed and you need to verify it's yours</p>
+    <p>So, please click <a href="{email_verification_view_url}">Verify now</a></p>
+    
+    <p>If the link above didn't work please copy/paste the following link to your web browser's address bar</p>
+    <p>{verification_url}</p>
+
+    <p>Note:<br>
+        if you didn't verify your email within 5 days, your account will be suspended and you'll need contact the website admin to solve this problem.
+    </p>
+
+    <p>If you did not change your email or this message was not sent to you by <a href="{WEBSITE_URL}">{WEBSITE_TITLE}</a> then please ignore this message</p>
+    <p>Thanks</p>
+
+@include email-footer

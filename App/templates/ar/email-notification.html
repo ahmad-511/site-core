@@ -1,0 +1,14 @@
+@include email-header
+
+    <p>مرحباً {name}</p>
+    <p>لديك إشعار جديد</p>
+
+    <div style="padding: 10px; border-radius: 5px; background-color: #eeeeee;">{notification}</div>
+    
+    <p style="margin: 30px 0; text-align: center;">
+        <a style="padding: 10px; border-radius: 5px; text-decoration: none; color: #fff; background-color: #2196f3;" target="_blank" href="{notification_link}">عرض التفاصيل</a>
+    </p>
+
+    <p>مع التحيات</p>
+    
+@include email-footer

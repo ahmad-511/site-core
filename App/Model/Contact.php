@@ -9,6 +9,7 @@ use App\Core\Model;
 use App\Core\Result;
 use App\Core\Template;
 use App\Core\Validator;
+use App\Core\ValidationRule;
 
 class Contact extends Model
 {
@@ -26,9 +27,9 @@ class Contact extends Model
         $this->captcha_code = $props['captcha_code'] ?? '';
 
         $this->validator = new Validator($this);
-        $this->validator->add('name', 'Name is missing', Validator::notEmpty());
-        $this->validator->add('email', 'Email is not valid', Validator::email());
-        $this->validator->add('message', 'Message is not valid', Validator::notEmpty());
+        $this->validator->add('name', 'Name is missing', ValidationRule::notEmpty());
+        $this->validator->add('email', 'Email is not valid', ValidationRule::email());
+        $this->validator->add('message', 'Message is not valid', ValidationRule::notEmpty());
         $this->validator->add('captcha_code', 'Invalid captcha code', function($value){
             return strtolower($value) == strtolower($_SESSION['captcha_code']??'fake'.random_int(0, 999));
         });       
@@ -39,7 +40,7 @@ class Contact extends Model
         if($dataErr = $this->validator->validate()){
             return new Result(
                 $dataErr,
-                'Some data are missing or invalid',
+                App::loc('Some data are missing or invalid'),
                 'validation_error',
                 ''
             );
@@ -51,7 +52,7 @@ class Contact extends Model
         if(!$tpl){
             return new Result(
                 null,
-                App::loc('Mail template can not be loaded', Router::getCurrentLocaleCode()),
+                App::loc('Mail template cannot be loaded', Router::getCurrentLocaleCode()),
                 'error',
                 ''
             );
@@ -65,7 +66,7 @@ class Contact extends Model
             ])
         ];
 
-        $isSent = Mailer::sendTemplate(SUPPORT_EMAIL, App::loc('Information Request'), 'general', $params);
+        $isSent = Mailer::sendTemplate(SUPPORT_EMAIL, App::loc('Support message'), 'general', $params);
 
         if ($isSent) {
             return new Result(

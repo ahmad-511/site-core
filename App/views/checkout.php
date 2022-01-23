@@ -10,10 +10,10 @@ use App\Core\Router;
 <script type="module">
     import {$, $$, errorInResponse, showMessage} from '/App/js/main.js';
     import Validator from '/App/js/Validator.js';
-    import Ajax from '/App/js/ajax.js';
+    import xhr from '/App/js/xhr.js';
 
     // Export some functions to Global scope to be used from none module script
-    window.utils = {$, $$, errorInResponse, showMessage, Validator, Ajax};
+    window.utils = {$, $$, errorInResponse, showMessage, Validator, xhr};
 </script>
 
 <script src="https://www.paypal.com/sdk/js?client-id=<?=CLIENT_ID?>&currency=<?=PAYPAL_CURRENCY?>"></script>
@@ -42,7 +42,7 @@ use App\Core\Router;
     }
 
     function init(){
-        const {$, $$, errorInResponse, showMessage, Validator, Ajax} = window.utils;
+        const {$, $$, errorInResponse, showMessage, Validator, xhr} = window.utils;
         
         paypal.Buttons({
             createOrder: function(data, actions) {

@@ -18,7 +18,7 @@
     <meta name="theme-color" content="#ffffff">
 
     <meta name="robots" content="robots.txt">
-    <title>Under Constructions | <?= WEBSITE_TITLE?></title>
+    <title>Under constructions | <?= WEBSITE_TITLE?></title>
 
     <style>
         * {
@@ -86,13 +86,13 @@
     <div class="stripes">&nbsp</div>
 
     <section class="wrapper">
-        <img src="/img/watermark.png" alt="<?= WEBSITE_TITLE?>" >
-        <h3>Under Constructions</h3>
+        <img src="/App/img/logo.png" alt="<?= WEBSITE_TITLE?>" >
+        <h3>Under constructions</h3>
         <form method="POST">
             <input type="password" name="password" autofocus placeholder="Your password">
         </form>
     </section>
     
-    <div class="stripes">&nbsp</div>
+    <div class="stripes">&nbsp;</div>
 </body>
 </html>

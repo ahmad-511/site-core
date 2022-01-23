@@ -112,6 +112,15 @@ export default class TableManager {
         return dataValue !== undefined?dataValue: textValue;
     }
 
+    getCellText(rowIndex, col) {
+        const tBody = this.setupTableBody(this.table);
+        let cellIndex = $(`thead [data-model='${col}']`, this.table).cellIndex;
+
+        let textValue = tBody.rows[rowIndex].cells[cellIndex].textContent;
+
+        return textValue;
+    }
+
     setupTableBody() {
         let tBody = $('tbody', this.table);
         if (!tBody) {
@@ -140,7 +149,17 @@ export default class TableManager {
             let display = row[c.name];
 
             if(c.useValue){
-                td.dataset.value = display;
+                // Use value may contains comma separated column names
+                let colNames = c.useValue.split(',').map(col => col.trim());
+                if(colNames.length == 1){
+                    td.dataset.value = row[c.useValue];
+                }else{
+                    const colValues = colNames.reduce((acc, cur) => {
+                        acc[cur] = row[cur];
+                        return acc;
+                    }, {})
+                    td.dataset.value = JSON.stringify(colValues);
+                }
             }
 
             let display2 = undefined;
@@ -164,10 +183,16 @@ export default class TableManager {
 
         for (let c of tHead) {
             if ('model' in c.dataset) {
+                let useValue = c.getAttribute('use-value');
+                
+                if(useValue === ''){
+                    useValue = c.dataset.model;
+                }
+
                 cols.push({
                     name: c.dataset.model,
                     class: c.dataset.class,
-                    useValue: c.getAttribute('use-value') !== null
+                    useValue: useValue 
                 });
             }
         }
@@ -185,15 +210,23 @@ export default class TableManager {
         // Generate tbody rows
         const cols = this.getModelColumns(this.table);
 
+        if(!(data instanceof Array)){
+            this.events.emit('render-error', 'Data must be an array');
+            return false;
+        }
+
         for (let row of data) {
             let tr = this.buildTableRow(row, cols);
 
             tBody.appendChild(tr);
         }
+
+        return true;
     }
 
     addRow(data) {
-        if(!data){
+        if(!(data instanceof Array)){
+            this.events.emit('render-error', "Row's data must be an array");
             return false;
         }
 
@@ -208,7 +241,8 @@ export default class TableManager {
     }
 
     updateRow(data, rowIndex) {
-        if(!data){
+        if(!(data instanceof Array)){
+            this.events.emit('render-error', "Row's data must be an array");
             return false;
         }
 

@@ -11,20 +11,20 @@ function checkMaintenanceMode(){
 
     if($maintenancePass == MAINTENANCE_PASSWORD) {
         $_SESSION['bypass_maintenance'] = true;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
     }
 
     $bypassMaintenance = $_SESSION['bypass_maintenance']??false;
 
 
-    if(MAINTENANCE_MODE && !$bypassMaintenance){
+    if(!$bypassMaintenance){
         include __DIR__ . '/under-constructions.php';
         exit();
     }
 }
 
-checkMaintenanceMode();
-
-// Add custom routing if needed
-include "custom-routes.php";
+if(MAINTENANCE_MODE && !($_SESSION['bypass_maintenance']??false)){
+    checkMaintenanceMode();
+}
 
 Router::resolve();

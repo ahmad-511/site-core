@@ -21,7 +21,9 @@ class DB {
     private static string $User = '';
     private static string $Password = '';
     private static string $TimezoneOffset = 'SYSTEM';
-    private static $conn = null;
+    private static $Conn = null;
+    private static int $TransactionLevel = 0;
+    private static int $RowCount = 0;
 
     public static function setDNS(string $host, string $dbName){
         self::$DNS = 'mysql:dbname=' . $dbName . ';host=' . $host . ';charset=utf8';
@@ -34,6 +36,10 @@ class DB {
 
     public static function setTimezone(string $timezone){
         self::$TimezoneOffset = self::getTimezoneOffset($timezone);
+    }
+
+    public static function getRowCount(): int{
+        return self::$RowCount;
     }
 
     /**
@@ -52,19 +58,71 @@ class DB {
         return (($tzo < 0)?'-':'+').gmdate("H:i", $tzo);
     }
 
+    public static function beginTransaction(){
+        if(self::$Conn === null){
+            self::connect();
+        }
+
+		if(self::$TransactionLevel == 0){
+			self::$Conn->beginTransaction();
+		}else{
+			self::$Conn->exec("SAVEPOINT LVL_" . self::$TransactionLevel);
+		}
+
+		self::$TransactionLevel++;
+		
+		return true;
+	}
+	
+	public static function commit(){
+		self::$TransactionLevel--;
+
+		if(self::$TransactionLevel < 0){
+			return false;
+		}
+
+		if(self::$TransactionLevel == 0){
+			try{
+				self::$Conn->commit();
+			}catch(PDOException $e){
+				throw new RuntimeException(["PDO commit failed", $e->getMessage()]);
+			}
+		}else{
+			self::$Conn->exec("RELEASE SAVEPOINT LVL_" . self::$TransactionLevel);
+		}
+
+		return true;
+	}
+
+	public static function RollBack(){
+		self::$TransactionLevel--;
+
+		if(self::$TransactionLevel<0){
+			return false;
+		}
+
+		if(self::$TransactionLevel==0){
+			self::$Conn->rollBack();
+		}else{
+			self::$Conn->exec("ROLLBACK TO SAVEPOINT LVL_".self::$TransactionLevel);
+		}
+
+		return true;
+	}
+
     /**
-     * Create PDO connection to the DB and store it in $conn var
+     * Create PDO connection to the DB and store it in $Conn var
      */
     private static function connect()
     {
         try{
             $initCom = "SET NAMES utf8mb4, wait_timeout=DEFAULT, interactive_timeout=DEFAULT, time_zone='". self::$TimezoneOffset . "';";
     
-            self::$conn = new PDO(self::$DNS, self::$User, self::$Password,array(PDO::MYSQL_ATTR_INIT_COMMAND => $initCom));
+            self::$Conn = new PDO(self::$DNS, self::$User, self::$Password,array(PDO::MYSQL_ATTR_INIT_COMMAND => $initCom));
             
             // Force PDO Errors to throw exception instead of Raising E_WARNING (this is useful to catch warning)
-            self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            self::$conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);// It's true by default
+            self::$Conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            self::$Conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);// It's true by default
         }catch(PDOException $e){
             throw new RuntimeException('Failed to connect to Database: '. $e->getMessage());
         }
@@ -74,16 +132,18 @@ class DB {
      * Query DB for specified sql string
      * @param string $sql sql string to be executed
      * @param array $params associative array contains sql string required named params
-     * @return array|int|boolean array for select generates result, int for inserted, boolean otherwise 
+     * @return array|int|boolean array for select result, int for inserted, boolean otherwise (execution success/fail)
      */
     public static function query($sql, $params=[]){
-        if(self::$conn === null){
+        self::$RowCount = 0;
+        
+        if(self::$Conn === null){
             self::connect();
         }
 
         // prepare the sql statement
 		try{
-			$stmt = self::$conn->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+			$stmt = self::$Conn->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
 		}catch (PDOException $e){
 			throw new RuntimeException('Failed to prepare sql query: '. $e->getMessage());
 		}
@@ -100,6 +160,10 @@ class DB {
                 switch(true){
                     case is_null($v):
                         $stmt->bindValue($p, $v, PDO::PARAM_NULL);
+                    break;
+
+                    case is_array($v):
+                        $stmt->bindValue($p, json_encode($v), PDO::PARAM_STR);
                     break;
     
                     case is_bool($v):
@@ -141,12 +205,15 @@ class DB {
 			throw new RuntimeException("Statement execution error:\n{$sql}");
         }
         
+        // Update affected rows count
+        self::$RowCount = $stmt->rowCount();
+
         // Get last inserted id if any
         $insertId = 0;
         $rowsets = [];
 
         if($isOk){
-            $insertId = self::$conn->lastInsertId();
+            $insertId = self::$Conn->lastInsertId();
 
             // Start looping available Rowsets
              do{
@@ -161,14 +228,18 @@ class DB {
              $stmt->closeCursor();
         }
         
-        // Return all rowsets or one first one if no others exist
+        // Return all rowsets or first one if no others exist
         if(count($rowsets) > 0){
             // If a query returned one rowset only we use the first result on rowset 0 otherwise we continue using an array of results
             return (count($rowsets)==1)?$rowsets[0]:$rowsets;
         }
 		
         // Return last inserted id if any, otherwise return isOk
-        return ($insertId > 0)?$insertId:$isOk;
+        if($insertId > 0){
+            return $insertId;
+        }
+
+        return $isOk;
     }
 
     /**
@@ -177,7 +248,7 @@ class DB {
      * @return string Safe comma separated values with strings being quoted
      */
     public static function sanitizeInParam($csv){
-        if(self::$conn === null){
+        if(self::$Conn === null){
             self::connect();
         }
 
@@ -188,7 +259,7 @@ class DB {
         $sanitaizedCSV = array_map(function($item){
             $item=trim($item);
             
-            return is_numeric($item)?$item:self::$conn->quote($item);
+            return is_numeric($item)?$item:self::$Conn->quote($item);
         }, $csv);
     
         return implode(',', $sanitaizedCSV);
@@ -223,24 +294,30 @@ class DB {
 
         foreach($criteria as $pn => $crt){
             $allowedEmpty = [];
-
+            $injected = false;
+            
             if(empty($crt)){ // Nothing in the criteria
                 continue;
                 
             }elseif(is_string($crt)){
                 $condition = $crt;
 
-            }elseif(count($crt) == 1){ // One item, it's the condition part
+            }elseif(count($crt) == 1){
                 $condition = $crt[0];
                 
-            }elseif(count($crt) == 2){ // Two items, first one is the operator, the second one is the condition
+            }elseif(count($crt) == 2){
                 $operator = $crt[0];
                 $condition = $crt[1];
                 
+            }elseif(count($crt) == 3){
+                $operator = $crt[0];
+                $condition = $crt[1];
+                $allowedEmpty = $crt[2];// allowed empty values array 
             }else{
                 $operator = $crt[0];
                 $condition = $crt[1];
                 $allowedEmpty = $crt[2];
+                $injected = !!$crt[3];// Injected param is a direct replace of the content and it will not be part of the PDO params
             }
             
             // $pn may have comma separated param names
@@ -259,13 +336,19 @@ class DB {
                 // For some reasons in_array() always returns true for empty string, so we add an extra condition for that
                 // Also be aware that 0 == '' but 0 !== ''
                 if($pn !== ''){
-                    if($searchParams[$pn] === '' || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
+                    if((!in_array('', $allowedEmpty) && $searchParams[$pn] === '') || (empty($searchParams[$pn]) && !in_array($searchParams[$pn], $allowedEmpty))){
                         // Continue the upper loop
                         continue 2;
                     }
                     
+                    if($injected){
+                        $condition = str_replace(":$prefix$pn", $searchParams[$pn], $condition);
+                    }
+
                     // Adding existing params
-                    $sqlParams[$prefix.$pn] = $searchParams[$pn];
+                    if(!$injected){
+                        $sqlParams[$prefix.$pn] = $searchParams[$pn];
+                    }
                 }
             }
             
@@ -278,7 +361,7 @@ class DB {
     }
 
     public static function tableFromArray($arr, $colNames = []){
-        if(self::$conn === null){
+        if(self::$Conn === null){
             self::connect();
         }
 
@@ -292,7 +375,7 @@ class DB {
                 $n = $colNames[$i]?? $i;
 
                 if(!is_numeric($v)){
-                    $v = self::$conn->quote($v);
+                    $v = self::$Conn->quote($v);
                 }
 
                 $vals[] = "$v AS `$n`";
@@ -305,7 +388,7 @@ class DB {
     }
 
     public static function tableFromAssocArray($arr, $keyColName = 'key', $valueColName = 'value'){
-        if(self::$conn === null){
+        if(self::$Conn === null){
             self::connect();
         }
 
@@ -313,11 +396,11 @@ class DB {
 
         foreach($arr as $k => $v){
             if(!is_numeric($k)){
-                $k = self::$conn->quote($k);
+                $k = self::$Conn->quote($k);
             }
 
             if(!is_numeric($v)){
-                $v = self::$conn->quote($v);
+                $v = self::$Conn->quote($v);
             }
 
             $tbl[] = "SELECT $k AS `$keyColName`, $v as `$valueColName`";

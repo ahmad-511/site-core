@@ -1,0 +1,33 @@
+.list {
+    padding: 2px;
+    border: solid 1px #b0bec5;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.list label {
+    display: block;
+    padding: 2px 4px;
+}
+
+.list-group ~ label {
+    margin-left: 1rem;
+}
+
+.list label ~ .list-group {
+    margin-left: 0;
+}
+
+.list label {
+    display: block;
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.list label.selected,
+.list label:hover {
+    color: #212121;
+    background-color: #eec60a;
+}
