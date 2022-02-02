@@ -635,7 +635,6 @@ class Router{
         }else{
             // Save current url for later use when redirect code is present
             $_SESSION[self::$RedirectViewSession] = $_SERVER['REQUEST_URI']??'';
-            $_SERVER['REQUEST_URI'] = '';
         }
 
         // If access allowed for current user then load specified view
