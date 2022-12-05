@@ -1,9 +1,9 @@
-import {$, $$} from "/App/js/main.js";
+import { $$ } from "/App/js/main.js";
 import EventEmitter from "/App/js/EventEmitter.js";
 
 export default class StarRating {
-    constructor(container, name, max = 5, value = 0, star = '☆', checkedStar = '★'){
-        if(!(container instanceof HTMLElement)){
+    constructor(container, name, max = 5, value = 0, star = '☆', checkedStar = '★') {
+        if (!(container instanceof HTMLElement)) {
             console.log('HTMLElement is expected in container argument');
         }
 
@@ -20,11 +20,11 @@ export default class StarRating {
         this.render();
     }
 
-    render(){
+    render() {
         this.starsContainer = this.container.appendChild(document.createElement('p'));
         this.starsContainer.className = 'stars-container';
 
-        for(let i = 0; i < this.max; i++){
+        for (let i = 0; i < this.max; i++) {
             const s = document.createElement('span');
             s.innerHTML = this.star;
             s.className = 'star';
@@ -36,14 +36,14 @@ export default class StarRating {
         this.setValue(this.value);
 
         this.starsContainer.addEventListener('click', e => {
-            if(this.freezed){
+            if (this.freezed) {
                 return;
             }
 
             const elem = e.target;
             const star = elem.closest('span.star');
-            
-            if(!star){
+
+            if (!star) {
                 return;
             }
 
@@ -51,15 +51,15 @@ export default class StarRating {
         });
     }
 
-    setValue(value){
+    setValue(value) {
         this.value = value;
-        
+
         const stars = $$('.star', this.starsContainer);
         stars.forEach(star => {
             star.innerHTML = this.star;
             star.className = 'star';
 
-            if(value >= star.dataset.value){
+            if (value >= star.dataset.value) {
                 star.innerHTML = this.checkedStar
                 star.classList.add('checked');
             }
@@ -68,7 +68,7 @@ export default class StarRating {
         this.events.emit('change', this.name, this.value)
     }
 
-    freez(isFreezed = true){
+    freez(isFreezed = true) {
         this.freezed = isFreezed;
         this.starsContainer.classList.toggle('freezed', isFreezed);
     }

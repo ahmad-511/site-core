@@ -28,4 +28,8 @@ class AccountService extends Service
     public static function generateMobileVerification(): string{
         return (string) random_int(10000, 99999);
     }
+
+    public static function generatePasswordReset(string $email): string{
+        return md5($email . microtime() . date('YmdHis'));
+    }
 }

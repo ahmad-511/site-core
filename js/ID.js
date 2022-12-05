@@ -1,26 +1,26 @@
-export default class ID{
-    constructor(seed = 0, useSession = false){
-        if(useSession){
-            this.seed = localStorage.getItem('IDGenerator-Seed')||0;
-        }else{
+export default class ID {
+    constructor(seed = 0, useSession = false) {
+        if (useSession) {
+            this.seed = localStorage.getItem('IDGenerator-Seed') || 0;
+        } else {
             this.seed = seed;
         }
     }
 
-    get(){
+    get() {
         this.seed++;
 
-        if(this.useSession){
+        if (this.useSession) {
             localStorage.setItem('IDGenerator-Seed', this.seed);
         }
 
         return this.seed;
     }
 
-    reset(){
+    reset() {
         this.seed = 0;
 
-        if(this.useSession){
+        if (this.useSession) {
             localStorage.setItem('IDGenerator-Seed', this.seed);
         }
     }

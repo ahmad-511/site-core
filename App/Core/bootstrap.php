@@ -14,8 +14,6 @@ use App\Core\Logger;
 use App\Core\Path;
 use App\Core\Request;
 use App\Service\MailService;
-use App\Service\SMSService;
-use App\Service\FakeSMSService;
 
 session_name(SESSION_NAME);
 session_start();
@@ -55,10 +53,11 @@ Template::setGeneralParams([
     '' => [
         'WEBSITE_URL' => WEBSITE_URL,
         'COPYRIGHT' => COPYRIGHT,
-        'SUPPORT_EMAIL' => SUPPORT_EMAIL,
+        'SUPPORT_EMAIL' => App::stripEmail(SUPPORT_EMAIL),
         'SUPPORT_MOBILE' => SUPPORT_MOBILE,
         'FACEBOOK_ID' => FACEBOOK_ID,
         'WHATSAPP' => WHATSAPP,
+        'LINKEDIN_ID' => LINKEDIN_ID,
     ],
     'en' => [
         'WEBSITE_TITLE' => App::loc(WEBSITE_TITLE, 'en'),
@@ -74,14 +73,22 @@ Template::setGeneralParams([
     ]
 ]);
 
-Captcha::$Font = __DIR__ . '/../fonts/DroidSerifBold.ttf';
+Captcha::$Font = __DIR__ . '/../../fonts/DroidSerifBold.ttf';
 
 MailService::SetMaxBatchSize(MAILER_MAX_BATCH_SIZE);
+MailService::SetSendRate(MAILER_SEND_RATE);
 MailService::SetSMTPAuth(MAILER_SMTP_AUTH);
 MailService::SetSMTPSecure(MAILER_SMTP_SECURE);
-MailService::SetOutpuDir(MAILER_OUTPUT_DIR);
+MailService::SetOutputDir(MAILER_OUTPUT_DIR);
+MailService::SetProviderDefault([
+    'smtp_host' => MAILER_SMTP_HOST,
+    'smtp_port' => MAILER_SMTP_PORT,
+    'username' => MAILER_SMTP_USERNAME,
+    'password' => MAILER_SMTP_PASSWORD,
+    'send_from' => MAILER_SEND_FROM
+]);
 
-SMSService::SetSMSClient(new FakeSMSService);
+// SMSService::SetSMSClient(new FakeSMSService);
 
 Logger::setLogPath(__DIR__ .'/../logs/');
 

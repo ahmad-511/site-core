@@ -42,8 +42,10 @@ class Template{
      * @param string $locale, language code necessary for including sub templates
      * @return void
      */
-    public function setTemplate(string $contents, string $locale = ''){
-        $this->template = self::ParseIncludes($contents, $locale);
+    public function setTemplate(string $template, string $locale = ''){
+        $template = self::enumerateLoops($template);
+        $template = self::enumerateConditions($template);
+        $this->template = self::ParseIncludes($template, $locale);
     }
 
     /**
@@ -156,6 +158,60 @@ class Template{
         self::$TemplateCache = [];
     }
 
+    private static function enumerateLoops($str = '') {
+        // Enumerate nested loops
+        $rCounter = "#\[(for)\s+.+?\s+in\s+.+?\s*\]|\[(endfor)\]#sim";
+
+        $counter = 0;
+        $str = preg_replace_callback($rCounter, function ($matches) use(&$counter){
+            $m = $matches[0];
+            $g1 = $matches[1]??'';
+            $g2 = $matches[2]??'';
+            $r = $m;
+
+            if (!empty($g1)) {
+                $counter++;
+                $r = str_replace($g1, "$g1:$counter", $m);
+            }
+
+            if (!empty($g2)) {
+                $r = str_replace($g2, "$g2:$counter", $m);
+                $counter--;
+            }
+
+            return $r;
+        }, $str);
+
+        return $str;
+    }
+
+    private static function enumerateConditions($str = '') {
+        // Enumerate nested conditions
+        $rCounter = "#\[(if)\s+.*?\s*\]|\[(endif)\]#sim";
+
+        $counter = 0;
+        $str = preg_replace_callback($rCounter, function ($matches) use(&$counter){
+            $m = $matches[0];
+            $g1 = $matches[1]??'';
+            $g2 = $matches[2]??'';
+            $r = $m;
+
+            if (!empty($g1)) {
+                $counter++;
+                $r = str_replace($g1, "$g1:$counter", $m);
+            }
+
+            if (!empty($g2)) {
+                $r = str_replace($g2, "$g2:$counter", $m);
+                $counter--;
+            }
+
+            return $r;
+        }, $str);
+
+        return $str;
+    }
+
     /**
      * Render loaded template contents
      * @param array $params Array of locale code => array of name value params used inside the template
@@ -195,12 +251,15 @@ class Template{
                 };
             }
         }
-    
+        
+        // Replace array variables (Repeat)
+        $tpl = $this->parseLoop($tpl, $params);
+        
         // Parse expressions
         $tpl = $this->parseExpressions($tpl, $params);
-
-        // Replace array variables (Repeat)
-        $tpl = $this->parseRepeat($tpl, $params);
+        
+        // Parse conditions
+        $tpl = $this->parseConditions($tpl);
     
         return $tpl;
     }
@@ -220,38 +279,70 @@ class Template{
         return $str;
     }
 
-    private function parseRepeat($str, $params){
-        preg_match_all("#\[repeat\s+?(.+?)=>(.+?)\](.*?)\[/repeat\]#si", $str, $matches, PREG_SET_ORDER);
+    private function parseLoop($str, $params){
+        $rFor = "#\[for:(\d+)\s+(.+?)\s+in\s+(.+?)\s*\](.*?)\[endfor:\\1\]#sim";
+        
+        // Using while loop to parse nested loops (In js matchAll gets them all)
+        while(preg_match_all($rFor, $str, $matches, PREG_SET_ORDER)){
+            if (empty($matches)) {
+                break;
+            }
+        
+            for ($i = 0; $i < count($matches); $i++) {
+                $match = $matches[$i];
+                $groupItem = $match[2];
+                $group = $match[3];
+                $segment = $match[4];
+        
+                $dataRepeat = [];
+                // loop all data
+                $ndx = 0;
+                foreach ($params[$group] as $obj) {
+                    if (is_array($obj)) {
+                        // Add special key/value for item index
+                        $obj['_index'] = $ndx++;
 
-        if (empty($matches)) {
-            return $str;
+                        // Combine group item name with group item keys and enclose them within brackets
+                        $objKeys = array_keys($obj);
+                        $objKeys = array_map(function ($i) use ($groupItem) {
+                            return '{' . $groupItem . '.' . $i . '}';
+                        }, $objKeys);
+
+                        $objValues = array_values($obj);
+                        $dataRepeat[] = str_replace($objKeys, $objValues, $segment);
+                    } else {
+                        $dataRepeat[] = str_replace('{' . $groupItem . '}', $obj, $segment);
+                    }
+                }
+        
+                $dataRepeat = implode("", $dataRepeat);
+                $str = str_replace($match[0], $dataRepeat, $str);
+            }
         }
-    
-        for ($i = 0; $i < count($matches); $i++) {
-            $match = $matches[$i];
-            $group = $match[1];
-            $groupItem = $match[2];
-            $segment = $match[3];
-    
-            $dataRepeat = [];
-            // loop all data
-            foreach ($params[$group] as $obj) {
-                if (is_array($obj)) {
-                    // Combine group item name with group item keys and enclose them within brackets
-                    $objKeys = array_keys($obj);
-                    $objKeys = array_map(function ($i) use ($groupItem) {
-                        return '{' . $groupItem . '.' . $i . '}';
-                    }, $objKeys);
-    
-                    $objValues = array_values($obj);
-                    $dataRepeat[] = str_replace($objKeys, $objValues, $segment);
+
+        return $str;
+    }
+
+    private function parseConditions($str) {
+        $rIf = "#\[if:(\d+)\s+(.*?)\s*\](.*?)\[endif:\\1\]#sim";
+        
+        // Using while loop to parse nested conditions (In js matchAll gets them all)
+        while(preg_match_all($rIf, $str, $matches, PREG_SET_ORDER)){
+
+            if (empty($matches)) {
+                break;
+            }
+
+            foreach($matches as $match) {
+                $contidtion = str_replace("\n", '', trim($match[2]));
+                $result = ExpressionParser::parse($contidtion);
+
+                if ($result) {
+                    $str = str_replace($match[0], $match[3], $str);
                 } else {
-                    $dataRepeat[] = str_replace('{' . $groupItem . '}', $obj, $segment);
+                    $str = str_replace($match[0], '', $str);
                 }
             }
-    
-            $dataRepeat = implode("", $dataRepeat);
-            $str = str_replace($match[0], $dataRepeat, $str);
         }
 
         return $str;

@@ -54,27 +54,27 @@ class Captcha{
 	public static function Generate(){
 		$width = self::$LettersCount * self::$LetterSpacing + 20;
 		$height = 40;
-		$image = imagecreatetruecolor($width, $height);
-		$backgroundColor = imagecolorallocate($image, self::$BackgroundColor->R, self::$BackgroundColor->G, self::$BackgroundColor->B);
-		$lineColor = imagecolorallocate($image, self::$LineColor->R, self::$LineColor->G, self::$LineColor->B);
-		$pixelColor = imagecolorallocate($image, self::$PixelColor->R, self::$PixelColor->G, self::$PixelColor->B);
-		$textColor = imagecolorallocate($image, self::$TextColor->R, self::$TextColor->G, self::$TextColor->B);
+		$image = \imagecreatetruecolor($width, $height);
+		$backgroundColor = \imagecolorallocate($image, self::$BackgroundColor->R, self::$BackgroundColor->G, self::$BackgroundColor->B);
+		$lineColor = \imagecolorallocate($image, self::$LineColor->R, self::$LineColor->G, self::$LineColor->B);
+		$pixelColor = \imagecolorallocate($image, self::$PixelColor->R, self::$PixelColor->G, self::$PixelColor->B);
+		$textColor = \imagecolorallocate($image, self::$TextColor->R, self::$TextColor->G, self::$TextColor->B);
 		
 		$code = '';
 
-		imagefilledrectangle($image, 0, 0, $width, $height, $backgroundColor);
+		\imagefilledrectangle($image, 0, 0, $width, $height, $backgroundColor);
 		
 		for($i = 0; $i < $height / 4; $i++){
-			imageline($image, 0, rand() % $height, $width,rand() % $height, $lineColor);
+			\imageline($image, 0, rand() % $height, $width,rand() % $height, $lineColor);
 		}
 		
 		for($i = 0; $i< $width * $height / 10; $i++){
-			imagesetpixel($image, rand() % $width, rand() % $height, $pixelColor);
+			\imagesetpixel($image, rand() % $width, rand() % $height, $pixelColor);
 		}
 		
 		for($i = 0; $i< self::$LettersCount; $i++) {
 			$letter = self::$Letters[rand(0, strlen(self::$Letters) - 1)];
-			imagettftext($image, self::$FontSize, rand(-30, 30), 10 + ($i * self::$LetterSpacing), 30, $textColor, self::$Font, $letter);
+			\imagettftext($image, self::$FontSize, rand(-30, 30), 10 + ($i * self::$LetterSpacing), 30, $textColor, self::$Font, $letter);
 			$code .= $letter;
 		}
 

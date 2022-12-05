@@ -16,6 +16,53 @@ class ValidationRule {
     }
 
     /**
+     * Check if value is array
+     * @param array $keys List of required keys
+     * @return callable
+     */
+    public static function arrayOf(array $keys = [], bool $allowEmpty = false){
+        return function($value) use($keys, $allowEmpty){
+            if(!is_array($value)){
+                return false;
+            }
+
+            if(empty($value)){
+                return $allowEmpty?true: false;
+            }
+
+            // $value should not be empty at this stage
+            // Check first item for specified keys
+            foreach($keys as $k){
+                if(!array_key_exists($k, $value[0])){
+                    return false;
+                }
+            }
+
+            return true;
+        };
+    }
+
+    /**
+     * Check if value is array
+     * @param array $props List of required props
+     * @return callable
+     */
+    public static function object(array $props = []){
+        return function($value) use($props){
+            $value = (array)$value;
+
+            // Check first item for specified props
+            foreach($props as $k){
+                if(!array_key_exists($k, $value)){
+                    return false;
+                }
+            }
+
+            return true;
+        };
+    }
+
+    /**
      * Check if value is a boolean
      * @return callable
      */

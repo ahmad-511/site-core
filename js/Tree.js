@@ -1,8 +1,8 @@
-import {$, $$} from '/App/js/main.js';
+import { $, $$ } from '/App/js/main.js';
 import EventEmitter from "/App/js/EventEmitter.js";
 
 export default class Tree {
-    constructor(container, data, childIdCol, parentIdCol, displayCol, valueCol){
+    constructor(container, data, childIdCol, parentIdCol, displayCol, valueCol) {
         this.container = container;
         this.data = data;
         this.childIdCol = childIdCol;
@@ -23,7 +23,7 @@ export default class Tree {
 
         // Handling mouse selection
         this.container.addEventListener('click', e => {
-            if(this.setSelectedElement(this.getSelectedElement(e.target))){
+            if (this.setSelectedElement(this.getSelectedElement(e.target))) {
                 this.updateLinkedFields(this.selectedElement.dataset.path, this.selectedElement.dataset.value);
 
                 this.events.emit('item-selected', this.selectedElement, this.selectedData);
@@ -31,24 +31,24 @@ export default class Tree {
         });
     }
 
-    setDisplayField(elem){
-        if(!(elem instanceof HTMLElement)){
+    setDisplayField(elem) {
+        if (!(elem instanceof HTMLElement)) {
             console.log('HTMLElement required');
         }
-        
+
         this.displayField = elem;
     }
 
-    setValueField(elem){
-        if(!(elem instanceof HTMLElement)){
+    setValueField(elem) {
+        if (!(elem instanceof HTMLElement)) {
             console.log('HTMLElement required');
         }
-        
+
         this.valueField = elem;
     }
 
-    setSearchField(elem){
-        if(!(elem instanceof HTMLInputElement)){
+    setSearchField(elem) {
+        if (!(elem instanceof HTMLInputElement)) {
             console.log('HTMLInputElement required');
         }
 
@@ -58,41 +58,41 @@ export default class Tree {
             this.search(e.target.value);
         });
 
-         // Handling keyboard selection
-         this.displayField.addEventListener('keydown', e => {
+        // Handling keyboard selection
+        this.displayField.addEventListener('keydown', e => {
             let isChanged = false;
 
-            switch(e.code){
+            switch (e.code) {
                 case 'ArrowUp':
                     this.selectedIndex--;
-                    
-                    if(this.selectedIndex < 0 ){
+
+                    if (this.selectedIndex < 0) {
                         this.selectedIndex = 0;
                     }
-                    
+
                     this.setSelectedIndex(this.selectedIndex);
                     isChanged = true;
                     break;
-                    
+
                 case 'ArrowDown':
                     this.selectedIndex++;
-                    
-                    if(this.selectedIndex > this.itemsCount -1 ){
+
+                    if (this.selectedIndex > this.itemsCount - 1) {
                         this.selectedIndex = this.itemsCount - 1;
                     }
-                    
+
                     this.setSelectedIndex(this.selectedIndex);
                     isChanged = true;
                     break;
 
                 case 'Tab':
-                    if(this.selectedElement){
+                    if (this.selectedElement) {
                         this.selectedElement.click();
                     }
                     break;
-                    
+
                 case 'Enter':
-                    if(this.selectedElement){
+                    if (this.selectedElement) {
                         this.selectedElement.click();
                     }
 
@@ -100,14 +100,14 @@ export default class Tree {
                     break;
             }
 
-            if(isChanged){
+            if (isChanged) {
                 e.preventDefault();
             }
         });
     }
 
-    setSelectedElement(elem){
-        if(!elem){
+    setSelectedElement(elem) {
+        if (!elem) {
             this.selectedElement = null;
             this.selectedData = null;
             this.selectedPath = null;
@@ -123,7 +123,7 @@ export default class Tree {
         this.selectedElement = elem;
 
         this.selectedElement.classList.add('selected');
-        this.selectedData = this.data.find( i => i[this.childIdCol] == this.selectedElement.dataset.id);
+        this.selectedData = this.data.find(i => i[this.childIdCol] == this.selectedElement.dataset.id);
         this.selectedPath = this.selectedElement.dataset.path;
         this.selectedIndex = this.selectedElement.dataset.index;
 
@@ -138,13 +138,13 @@ export default class Tree {
         return target.closest('li');
     }
 
-    getItemData(id){
+    getItemData(id) {
         return this.data.find(i => i[this.childIdCol] == id);
     }
 
-    setSelectedIndex(index){
+    setSelectedIndex(index) {
         const elem = $(`[data-index="${index}"]`, this.container);
-        
+
         return this.setSelectedElement(elem);
     }
 
@@ -160,18 +160,18 @@ export default class Tree {
 
         this.data = data;
         this.buildUL(data, this.container, 0, searchStr);
-        
+
         this.itemsCount = data.length;
 
-        if(searchStr){
+        if (searchStr) {
             this.displaySearchResult()
         }
     }
-   
+
     buildUL(data, container, parentId, searchStr) {
         const children = data.filter(i => i[this.parentIdCol] == parentId);
 
-        if(children.length == 0){
+        if (children.length == 0) {
             return;
         }
 
@@ -183,7 +183,7 @@ export default class Tree {
         for (let i of children) {
             const span = document.createElement('span');
             const li = document.createElement('li');
-            const path = `${parentPath}${parentPath?this.pathSeparator:''}${i[this.displayCol]}`;
+            const path = `${parentPath}${parentPath ? this.pathSeparator : ''}${i[this.displayCol]}`;
 
             let display = i[this.displayCol];
             let value = i[this.valueCol];
@@ -199,7 +199,7 @@ export default class Tree {
             li.dataset.isParent = false;
 
             // Search
-            if(searchStr && i[this.displayCol].toUpperCase().indexOf(searchStr.toUpperCase()) > -1){
+            if (searchStr && i[this.displayCol].toUpperCase().indexOf(searchStr.toUpperCase()) > -1) {
                 li.dataset.match = true;
             }
 
@@ -209,36 +209,36 @@ export default class Tree {
         }
     }
 
-    displaySearchResult(){
+    displaySearchResult() {
         // Display result in separate container
         let ul = document.createElement('ul');
-        
-        $$('li[data-match="true"]', this.container).forEach( (li, i) => {
+
+        $$('li[data-match="true"]', this.container).forEach((li, i) => {
             ul.appendChild(li);
         });
 
         // Reindex LIs (with their children)
         $$('li', ul).forEach((li, i) => {
             li.dataset.index = i;
-            this.itemsCount = i+1;
+            this.itemsCount = i + 1;
         });
-        
+
         this.container.innerHTML = '';
         this.container.appendChild(ul);
     }
 
-    add(item){
+    add(item) {
         const parentId = item.parent_id;
-        let parentUL =  null;
+        let parentUL = null;
         let parentPath = '';
 
-        if(parentId == 0){
+        if (parentId == 0) {
             parentUL = $('ul', this.container);
-        }else{
+        } else {
             // Finding parent LI item in the elements tree
             const parentLI = $(`li[data-id='${parentId}']`, this.container);
-    
-            if(!parentLI){
+
+            if (!parentLI) {
                 console.log(`Can't find parent with ID ${parentId}`);
                 return;
             }
@@ -248,7 +248,7 @@ export default class Tree {
             // Get parent UL for the new item
             parentUL = $(`ul`, parentLI);
 
-            if(!parentUL){
+            if (!parentUL) {
                 parentUL = parentLI.appendChild(document.createElement('ul'));
                 parentLI.dataset.isParent = true;
             }
@@ -258,7 +258,7 @@ export default class Tree {
         this.data.push(item);
 
         const li = document.createElement('li');
-        
+
 
         li.textContent = item[this.displayCol];
         li.dataset.value = item[this.valueCol];
@@ -270,13 +270,13 @@ export default class Tree {
         parentUL.appendChild(li);
     }
 
-    remove(item){
+    remove(item) {
         const childId = item[this.childIdCol];
 
         // Finding the item in the array
         const curItemIndex = this.data.findIndex(i => i[this.childIdCol] == childId);
 
-        if(!curItemIndex === -1){
+        if (!curItemIndex === -1) {
             console.log(`Can't find item with ID ${childId}`);
             return;
         }
@@ -285,10 +285,10 @@ export default class Tree {
         const curItem = $(`li[data-id='${childId}']`, this.container);
 
         // remove item from elements tree
-        if(curItem){
+        if (curItem) {
             curItem.remove();
 
-            if(this.selectedData && this.selectedData[this.childIdCol] == childId){
+            if (this.selectedData && this.selectedData[this.childIdCol] == childId) {
                 this.selectedElement = null;
                 this.selectedData = null;
                 this.selectedPath = null;
@@ -299,7 +299,7 @@ export default class Tree {
 
         // remove item from the data array
         this.data = this.data.splice(curItemIndex, 1);
-        
+
         // Update the parent's (isParent) attribute
         const parentItem = $(`li[data-id='${parentId}']`, this.container);
 
@@ -307,50 +307,50 @@ export default class Tree {
         parentItem.dataset.isParent = hasChildren;
     }
 
-    update(item){
+    update(item) {
         const childId = item[this.childIdCol];
 
         // Finding the item in the array
         const curItemIndex = this.data.findIndex(i => i[this.childIdCol] == childId);
 
-        if(!curItemIndex === -1){
+        if (!curItemIndex === -1) {
             console.log(`Can't find item with ID ${childId}`);
             return;
         }
-        
+
         let curItem = this.data[curItemIndex];
 
         // remove item from elements tree
         this.remove(curItem);
-        
+
         // Add the updated item
         this.add(item);
-        
+
         // Update data array
         this.data[curItemIndex] = item;
     }
 
-    getValues(){
+    getValues() {
         return this.data.map(i => i[this.valueCol]);
     }
-    
-    search(str){
+
+    search(str) {
         this.render(this.data, str);
     }
 
-    updateLinkedFields(display, value){
-        if(this.displayField){
-            if(this.displayField instanceof HTMLInputElement){
+    updateLinkedFields(display, value) {
+        if (this.displayField) {
+            if (this.displayField instanceof HTMLInputElement) {
                 this.displayField.value = display;
-            }else{
+            } else {
                 this.displayField.textContent = display;
             }
         }
-        
-        if(this.valueField){
-            if(this.valueField instanceof HTMLInputElement){
+
+        if (this.valueField) {
+            if (this.valueField instanceof HTMLInputElement) {
                 this.valueField.value = value;
-            }else{
+            } else {
                 this.valueField.textContent = value;
             }
         }

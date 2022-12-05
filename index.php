@@ -1,6 +1,8 @@
 <?php
 declare (strict_types = 1);
 
+use App\Controller\AccountController;
+use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Router;
 
@@ -25,6 +27,12 @@ function checkMaintenanceMode(){
 
 if(MAINTENANCE_MODE && !($_SESSION['bypass_maintenance']??false)){
     checkMaintenanceMode();
+}
+
+// Remember me cookie
+if(ENABLE_REMEMBER_ME && !Auth::authenticated() && !empty($_COOKIE[REMEMBER_ME_COOKIE_NAME])){
+    $accountCtrl = new AccountController();
+    $accountCtrl->CookieLogin([]);
 }
 
 Router::resolve();

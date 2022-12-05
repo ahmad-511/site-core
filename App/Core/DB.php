@@ -85,7 +85,7 @@ class DB {
 			try{
 				self::$Conn->commit();
 			}catch(PDOException $e){
-				throw new RuntimeException(["PDO commit failed", $e->getMessage()]);
+				throw new RuntimeException("PDO commit failed: " . $e->getMessage());
 			}
 		}else{
 			self::$Conn->exec("RELEASE SAVEPOINT LVL_" . self::$TransactionLevel);

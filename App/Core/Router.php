@@ -19,6 +19,7 @@ class Router{
     private static string $AccessDeniedView = 'access-denied';
     private static string $PageNotFoundView = 'page-not-found';
     private static string $RedirectViewSession = 'redirect_view';
+    private static string $NullParamValue = '.';
     
     private static bool $CaseSensitivity = true;
     private static string $CurrentLayout = 'main';
@@ -117,6 +118,15 @@ class Router{
      */
     public static function setRedirectViewSession(string $redirectViewSession = ''){
         self::$RedirectViewSession = $redirectViewSession;
+    }
+
+    /**
+     * Set the value that will be used if passed param value is null or empty string (Used when generating routeUrl)
+     * @param string $NullParamValue
+     * @return void
+     */
+    public static function setNullParamValue(string $NullParamValue = '.'){
+        self::$NullParamValue = $NullParamValue;
     }
 
     /**
@@ -256,20 +266,43 @@ class Router{
         if(!empty($path)){
             // Replace route params
             if(!empty($params)){
+                // Store a copy of original route params to be used in replacing un-named params (values passed as sequencial array)
+                preg_match_all("#\{.+?\}#", $path, $origParams);
+                $origParams = $origParams[0];
+
                 // Replace named params
                 foreach($params as $n => $v){
-                    $path = str_replace('{'.$n.'}', $v, $path);
+                    if(is_null($v) || $v == ''){
+                        $v = self::$NullParamValue;
+                    }
+
+                    $path = str_replace(['{'.$n.'?}', '{'.$n.'}'], [$v, $v], $path);
                 }
 
                 // Replace un-named params
-                $path = preg_replace_callback("#\{.+?\}#", function($m) use($params) {
-                    static $counter = 0;
-                    if($counter < count($params)){
-                        return $params[$counter++];
-                    }else{
-                        return $m;
+                // Get only numerically keyed values
+                $params = array_filter($params, function($key){
+                    return is_numeric($key);
+                }, ARRAY_FILTER_USE_KEY);
+
+                // Replace sequencial params with respect to original params order
+                $path = preg_replace_callback("#\{.+?\}#", function($m) use($params, $origParams) {
+                    $pos = array_search($m[0], $origParams);
+
+                    if($pos !== false && array_key_exists($pos, $params)){
+                        $v = $params[$pos]??'';
+                        if(is_null($v) || $v == ''){
+                            $v = self::$NullParamValue;
+                        }
+                        
+                        return $v;
                     }
+                   
+                    return $m[0];
                 }, $path);
+
+                // Clean up optional params
+                $path = preg_replace("#\{.+?\?}#", ".", $path);
             }
         }elseif(is_null($path)){ // Use route name as path for auto routes
             $path = ucwords($routeName);
@@ -375,7 +408,7 @@ class Router{
             }
 
             $quotedPath = preg_quote($route->path);
-            $pattern = '#^' . preg_replace('/\\\{.+?\\\}/', '(.+?)', $quotedPath, -1, $paramsCount) . '$#';
+            $pattern = '#^' . preg_replace(['/\\/\\\{.+?\\?\\\}/', '/\\\{.+?\\\}/'], ['(?:/(.+?))?', '(.+?)'], $quotedPath, -1, $paramsCount) . '$#';
 
             if(!self::$CaseSensitivity){
                 $pattern .= 'i';
@@ -391,13 +424,21 @@ class Router{
                 // Extract route params
                 if($paramsCount > 0){
                     // Extract path params names
-                    $pattern = str_replace('(.+?)', '{(.+?)}', $pattern);
+                    $pattern = strtr($pattern,[
+                        '(?:/(.+?))?' => '/{(.+?)\?}',
+                        '(.+?)' => '{(.+?)}'
+                    ]);
 
                     preg_match($pattern, $route->path, $pNames);
 
                     // Remove first element which contains the full string
                     array_shift($pValues);
                     array_shift($pNames);
+
+                    // Add optional params values
+                    if(count($pValues) < count($pNames)){
+                        $pValues = array_pad($pValues, count($pNames), null);
+                    }
 
                     // Assign param names to param values
                     $params = array_combine($pNames, $pValues);
@@ -411,9 +452,9 @@ class Router{
             // When controller is a string it represents the view code
             if(is_string($controller)){
                 self::renderView($controller, $params);
-
+                
                 return true;
-            }elseif(is_array($controller) && is_callable($controller)){
+            }elseif(is_array($controller) && is_callable($controller, true)){
                 self::executeController($controller[0], $controller[1], $params);
                 
                 return true;
@@ -634,7 +675,7 @@ class Router{
             }
         }else{
             // Save current url for later use when redirect code is present
-            $_SESSION[self::$RedirectViewSession] = $_SERVER['REQUEST_URI']??'';
+            $_SESSION[self::$RedirectViewSession] = Request::getURI();
         }
 
         // If access allowed for current user then load specified view

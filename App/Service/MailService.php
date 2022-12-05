@@ -7,6 +7,7 @@ use App\Core\Result;
 use App\Core\Service;
 use App\Model\MailProvider;
 use App\Model\MailQueue;
+use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 use App\Core\DB;
 use App\Core\Template;
@@ -14,12 +15,18 @@ use App\Core\Template;
 class MailService extends Service
 {
     private static int $MaxBatchSize = 25;
+    private static int $SendRate = 10;
     private static bool $SMTPAuth = false;
     private static string $SMTPSecure = ''; // tls, ssl, ''
-    private static string $OutpuDir = '';
+    private static string $OutputDir = '';
+    private static array $ProviderDefault = [];
 
     public static function SetMaxBatchSize(int $size){
         self::$MaxBatchSize = $size;
+    }
+
+    public static function SetSendRate(int $rate){
+        self::$SendRate = $rate;
     }
 
     public static function SetSMTPAuth(bool $smtpAuth){
@@ -30,8 +37,12 @@ class MailService extends Service
         self::$SMTPSecure = $smtpSecure;
     }
 
-    public static function SetOutpuDir(string $outpuDir){
-        self::$OutpuDir = $outpuDir;
+    public static function SetOutputDir(string $outputDir){
+        self::$OutputDir = $outputDir;
+    }
+
+    public static function SetProviderDefault(array $providerDefault){
+        self::$ProviderDefault = $providerDefault;
     }
 
     public static function ParseAddress($address){
@@ -66,7 +77,7 @@ class MailService extends Service
         return $resRead->data;
     }
 
-    public static function Send(string $to, string $subject = '', string $body, array $params = [], bool $useTemplate = false, int $priority = 2, string $languageCode = ''): Result
+    public static function Send(string $to, string $subject = '', string $body='', array $params = [], bool $useTemplate = false, int $priority = 2, string $languageCode = ''): Result
     {
         static $mailQueue = null;
 
@@ -175,7 +186,7 @@ class MailService extends Service
         return new Result($sendStatus);
     }
 
-    private static function Dispatch(array $messages = [], $provider): array
+    private static function Dispatch(array $messages = [], array $provider = []): array
     {
         // Construct PHPMailer with exception handling
         static $mailer = null;
@@ -235,19 +246,34 @@ class MailService extends Service
             $mailer->Subject = $message['subject'];
             $mailer->Body = $body;
 
-            if(!empty(self::$OutpuDir)){
+            if(!empty(self::$OutputDir)){
                 $mailer->preSend();
-                file_put_contents(self::$OutpuDir . $message['queue_id'].'.eml', $mailer->getSentMIMEMessage());
+                file_put_contents(self::$OutputDir . $message['queue_id'].'.eml', $mailer->getSentMIMEMessage());
                 
                 self::DeleteQueue(intval($emailStatus['queue_id']));
                 $sentCount++;
             }else{
-                if($mailer->send()){
-                    self::DeleteQueue(intval($emailStatus['queue_id']));
-                    $sentCount++;
-                }else{
+                try{
+                    // Limit sending rate per second to prevent blacklisting and off load the server 
+                    if(self::$SendRate > 0 && $sentCount > 0 && $sentCount % self::$SendRate == 0){
+                        sleep(1);
+                    }
+
+                    $isSent = $mailer->send();
+                    
+                    if($isSent){
+                        self::DeleteQueue(intval($emailStatus['queue_id']));
+                        $sentCount++;
+                    }else{
+                        $emailStatus['status'] = 'Failed';
+                        $emailStatus['remarks'] = $mailer->ErrorInfo;
+    
+                        self::UpdateEmailStatus($emailStatus);
+                    }
+                }
+                catch(Exception $ex){
                     $emailStatus['status'] = 'Failed';
-                    $emailStatus['remarks'] = $mailer->ErrorInfo;
+                    $emailStatus['remarks'] = $ex->getMessage();
 
                     self::UpdateEmailStatus($emailStatus);
                 }
@@ -267,15 +293,96 @@ class MailService extends Service
         return $sendStatus;
     }
 
-    private static function SetupMailer(PHPMailer $mailer, $provider): PHPMailer
+    public static function DirectSend($to, $subject, $body, $params = [], $useTemplate = 0, $languageCode = '', $queueID = null){
+        // Construct PHPMailer with exception handling
+        static $mailer = null;
+        static $sentCount = 0;
+
+        if(is_null($mailer)){
+            $mailer = new PHPMailer(true);
+        }
+        
+        self::SetupMailer($mailer);
+
+        $emlParts = self::ParseAddress($to);
+
+        if(empty($emlParts)){
+            return [
+                'status' => 'error',
+                'remark' => 'Bad email format'
+            ];
+        }
+
+        $mailer->addAddress($emlParts['email'], $emlParts['name']);
+
+        // Generate body from template
+        if($useTemplate == 1){
+            $tpl = new Template($body, $languageCode);
+            // Adding some useful params
+            $params['EMAIL_SUBJECT'] = $subject;
+            $params['EMAIL_DATE'] = date('Y-m-d H:i:s');
+
+            $body = $tpl->render($params);
+        }else{
+            // Replace body params
+            $tplTemp = new Template('');
+            $tplTemp->setTemplate($body);
+            $body = $tplTemp->render($params);
+        }
+
+        $mailer->Subject = $subject;
+        $mailer->Body = $body;
+
+        if(!empty(self::$OutputDir)){
+            $mailer->preSend();
+            file_put_contents(self::$OutputDir . ($queueID??intval(microtime(true))).'.eml', $mailer->getSentMIMEMessage());
+        }else{
+            try{
+                // Limit sending rate per second to prevent blacklisting and off load the server 
+                if(self::$SendRate > 0 && $sentCount > 0 && $sentCount % self::$SendRate == 0){
+                    sleep(1);
+                }
+
+                $isSent = $mailer->send();
+                
+                if($isSent){
+                    $sentCount++;
+                }else{
+                    $emailStatus['status'] = 'error';
+                    $emailStatus['remarks'] = $mailer->ErrorInfo;
+
+                    return [
+                        'status' => 'error',
+                        'remarks' => $mailer->ErrorInfo
+                    ];
+                }
+            }
+            catch(Exception $ex){
+                return [
+                    'status' => 'error',
+                    'remarks' => $ex->getMessage()
+                ];
+            }
+        }
+        
+        $mailer->clearAllRecipients();
+        $mailer->smtpClose();
+
+        return [
+            'status' => 'success',
+            'remarks' => 'Message sent'
+        ];
+    }
+
+    private static function SetupMailer(PHPMailer $mailer, array $provider = []): PHPMailer
     {
-        $mailer->Host = $provider['smtp_host'];
-        $mailer->Port = $provider['smtp_port'];
-        $mailer->Username = $provider['username'];
-        $mailer->Password = $provider['password'];
+        $mailer->Host = $provider['smtp_host']??self::$ProviderDefault['smtp_host'];
+        $mailer->Port = $provider['smtp_port']??self::$ProviderDefault['smtp_port'];
+        $mailer->Username = $provider['username']??self::$ProviderDefault['username'];
+        $mailer->Password = $provider['password']??self::$ProviderDefault['password'];
         
         // Set from header, fallback to current email username
-        $from = $provider['send_from'];
+        $from = $provider['send_from']??self::$ProviderDefault['send_from'];
         if(empty($from)){
             $from = $provider['username'];
         }

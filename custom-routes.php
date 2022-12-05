@@ -1,7 +1,6 @@
 <?php
 use App\Core\Router;
-use \App\Controller;
-
+use App\Controller\AccountController;
 // Router::get('/test2/{id}', function($reqParams){
 //     return 'Hello, this is a test with ID #'.$reqParams['id'];
 // });
@@ -10,9 +9,10 @@ use \App\Controller;
 // Router::get('/test', 'testView');
 
 // Account
-Router::get('/api/User/Read', [Controller\UserController::class, 'Read']);
-Router::get('/api/User/Read/{user_id}', [Controller\UserController::class, 'Read']);
-Router::post('/api/User/Create', [Controller\UserController::class, 'Create']);
-Router::post('/api/User/Update', [Controller\UserController::class, 'Update']);
-Router::post('/api/User/Login', [Controller\UserController::class, 'Login']);
+Router::get('/api/Account/Read', [AccountController::class, 'Read']);
+Router::get('/api/Account/Read/{account_id}', [AccountController::class, 'Read']);
+Router::post('/api/Account/Create', [AccountController::class, 'Create']);
+Router::post('/api/Account/Update', [AccountController::class, 'Update']);
+Router::post('/api/Account/Login', [AccountController::class, 'Login']);
+Router::get('/api/Account/Photo/{photo_path}', [AccountController::class, 'Photo'], 'account-photo');
 ?>

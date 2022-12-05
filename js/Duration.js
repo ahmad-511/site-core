@@ -1,8 +1,8 @@
-import EventEmitter from "/App/js/EventEmitter.js";
+import EventEmitter from "/js/EventEmitter.js";
 
 export class Component {
 
-    constructor (name, value, min, max, step, required = false, label){
+    constructor(name, value, min, max, step, required = false, label) {
         this.name = name;
         this.value = value;
         this.min = min;
@@ -14,16 +14,16 @@ export class Component {
 }
 
 export default class Duration {
-    constructor(container, name = '', components = []){
-        if(!(container instanceof HTMLElement)){
+    constructor(container, name = '', components = []) {
+        if (!(container instanceof HTMLElement)) {
             console.log('HTMLElement is expected in container argument');
         }
 
-        if(!(components instanceof Array)){
+        if (!(components instanceof Array)) {
             console.log('Array of type Compenent is expected in components argument');
         }
 
-        if((components instanceof Array) && components.length && !(components[0] instanceof Component)){
+        if ((components instanceof Array) && components.length && !(components[0] instanceof Component)) {
             console.log('Array of type Component is expected in components argument');
         }
 
@@ -37,8 +37,8 @@ export default class Duration {
 
         this.render();
     }
-    
-    render(){
+
+    render() {
         this.container.innerHTML = '';
 
         const handleChange = (value, component) => {
@@ -63,36 +63,36 @@ export default class Duration {
                 handleChange(this.getValue(), c)
             });
 
-            if(c.label){
+            if (c.label) {
                 const label = document.createElement('label');
                 label.textContent = `${c.label} `;
                 label.appendChild(elem);
                 this.container.appendChild(label);
-            }else{
+            } else {
                 this.container.appendChild(elem);
             }
         });
     }
 
-    setValue(obj){
+    setValue(obj) {
         Object.entries(obj).forEach(([key, value]) => {
             const comp = this.components.find(c => c.name == key);
-            
-            if(comp){
+
+            if (comp) {
                 comp.element.value = value;
                 comp.element.dispatchEvent(new Event('change'));
             }
         });
     }
 
-    getValue(){
-        return this.components.reduce( (acc, curr) => {
+    getValue() {
+        return this.components.reduce((acc, curr) => {
             acc[curr.name] = curr.value;
             return acc;
         }, {});
     }
 
-    getComponent(name){
+    getComponent(name) {
         return this.components.find(c => c.name == name);
     }
 }

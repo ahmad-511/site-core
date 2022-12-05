@@ -8,7 +8,7 @@
 return [
     '*'=>[
         'css'=>[
-            '/App/css/style.css'
+            '/css/style.css'
         ],
         'js'=>[
 

@@ -25,6 +25,22 @@ class AttachmentService extends Service
         return $resCount->data;
     }
 
+    public static function GetAttachment(int $attachmentID, int $accountID): array{
+        $attachmentController = new AttachmentController();
+
+        $resRead = $attachmentController->Read([
+            'attachment_id' => $attachmentID,
+            'account_id' => $accountID
+        ]);
+
+        if(!empty($resRead->data)){
+            $resRead->data = $resRead->data[0];
+
+        }
+
+        return $resRead->data;
+    }
+
     public static function PhotoByReference(string $type, int $referenceID): Result
     {
         $attachmentController = new AttachmentController();

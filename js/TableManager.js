@@ -1,9 +1,9 @@
-import {$, $$} from '/App/js/main.js';
+import { $, $$ } from '/App/js/main.js';
 import EventEmitter from "/App/js/EventEmitter.js";
 
 export default class TableManager {
 
-    constructor(table){
+    constructor(table) {
         this.table = table;
         this.selectedRow = null;
 
@@ -12,13 +12,13 @@ export default class TableManager {
         this.isDoubleClicking = false;
 
         this.table.addEventListener('click', e => {
-            if(this.isDoubleClicking){
+            if (this.isDoubleClicking) {
                 this.isDoubleClicking = false;
                 return;
             }
-            
+
             this.clickTimer = setTimeout(() => {
-                if(this.isDoubleClicking){
+                if (this.isDoubleClicking) {
                     this.isDoubleClicking = false;
                     return;
                 }
@@ -30,7 +30,7 @@ export default class TableManager {
         });
 
         this.table.addEventListener('dblclick', e => {
-            if(this.clickTimer){
+            if (this.clickTimer) {
                 clearTimeout(this.clickTimer);
                 this.clickTimer = null;
             }
@@ -57,34 +57,34 @@ export default class TableManager {
         });
 
         this.table.addEventListener('touchend', e => {
-            if(this.clickTimer){
+            if (this.clickTimer) {
                 clearTimeout(this.clickTimer);
             }
         });
 
         this.table.addEventListener('touchmove', e => {
-            if(this.clickTimer){
+            if (this.clickTimer) {
                 clearTimeout(this.clickTimer);
             }
         });
     }
 
-    setSelectedRow(row, withEvent){
-        if(withEvent == null){
+    setSelectedRow(row, withEvent) {
+        if (withEvent == null) {
             withEvent = true;
         }
 
         withEvent = !!withEvent;
 
-        if(row){
+        if (row) {
             if (this.selectedRow) {
                 this.selectedRow.classList.remove('selected');
             }
-            
+
             this.selectedRow = row;
             this.selectedRow.classList.add('selected');
 
-            if(withEvent){
+            if (withEvent) {
                 this.events.emit('row-selected', row);
             }
         }
@@ -95,11 +95,11 @@ export default class TableManager {
 
         if (target.tagName == 'TR') {
             tr = target;
-        }else{
+        } else {
             tr = target.closest('tr');
         }
 
-        return (tr && tr.parentElement.tagName == 'TBODY')?tr: null;
+        return (tr && tr.parentElement.tagName == 'TBODY') ? tr : null;
     }
 
     getCellValue(rowIndex, col) {
@@ -109,7 +109,7 @@ export default class TableManager {
         let dataValue = tBody.rows[rowIndex].cells[cellIndex].dataset.value;
         let textValue = tBody.rows[rowIndex].cells[cellIndex].textContent;
 
-        return dataValue !== undefined?dataValue: textValue;
+        return dataValue !== undefined ? dataValue : textValue;
     }
 
     getCellText(rowIndex, col) {
@@ -132,7 +132,7 @@ export default class TableManager {
     }
 
     buildTableRow(row, cols) {
-        if(!cols){
+        if (!cols) {
             cols = this.getModelColumns(this.table);
         }
 
@@ -142,18 +142,18 @@ export default class TableManager {
             // No need to check if column name (model) exists in the row because we're maybe using custom name to be handled by cellRenderCallback
 
             let td = document.createElement('td');
-            if(c.class){
+            if (c.class) {
                 td.className = c.class;
             }
 
             let display = row[c.name];
 
-            if(c.useValue){
+            if (c.useValue) {
                 // Use value may contains comma separated column names
                 let colNames = c.useValue.split(',').map(col => col.trim());
-                if(colNames.length == 1){
+                if (colNames.length == 1) {
                     td.dataset.value = row[c.useValue];
-                }else{
+                } else {
                     const colValues = colNames.reduce((acc, cur) => {
                         acc[cur] = row[cur];
                         return acc;
@@ -165,7 +165,7 @@ export default class TableManager {
             let display2 = undefined;
             display2 = this.events.emit('cell-render', c.name, display, row);
 
-            td.innerHTML = (display2 !== undefined)?display2: display;
+            td.innerHTML = (display2 !== undefined) ? display2 : display;
             tr.appendChild(td);
         }
 
@@ -174,7 +174,7 @@ export default class TableManager {
 
     getModelColumns() {
         const tHead = $$('thead th', this.table);
-        
+
         if (!tHead) {
             return null;
         }
@@ -184,15 +184,15 @@ export default class TableManager {
         for (let c of tHead) {
             if ('model' in c.dataset) {
                 let useValue = c.getAttribute('use-value');
-                
-                if(useValue === ''){
+
+                if (useValue === '') {
                     useValue = c.dataset.model;
                 }
 
                 cols.push({
                     name: c.dataset.model,
                     class: c.dataset.class,
-                    useValue: useValue 
+                    useValue: useValue
                 });
             }
         }
@@ -202,15 +202,15 @@ export default class TableManager {
 
     renderTable(data, clear) {
         const tBody = this.setupTableBody(this.table);
-        
+
         if (clear) {
             tBody.innerHTML = '';
         }
-        
+
         // Generate tbody rows
         const cols = this.getModelColumns(this.table);
 
-        if(!(data instanceof Array)){
+        if (!(data instanceof Array)) {
             this.events.emit('render-error', 'Data must be an array');
             return false;
         }
@@ -225,7 +225,7 @@ export default class TableManager {
     }
 
     addRow(data) {
-        if(!(data instanceof Array)){
+        if (!(data instanceof Array)) {
             this.events.emit('render-error', "Row's data must be an array");
             return false;
         }
@@ -241,7 +241,7 @@ export default class TableManager {
     }
 
     updateRow(data, rowIndex) {
-        if(!(data instanceof Array)){
+        if (!(data instanceof Array)) {
             this.events.emit('render-error', "Row's data must be an array");
             return false;
         }
@@ -261,12 +261,12 @@ export default class TableManager {
     removeRow(rowIndex) {
         const tBody = this.setupTableBody(this.table);
 
-        if(tBody.rows[rowIndex] == this.selectedRow){
+        if (tBody.rows[rowIndex] == this.selectedRow) {
             this.selectedRow = null;
         }
 
         tBody.deleteRow(rowIndex);
-        
+
         return true;
     }
 }

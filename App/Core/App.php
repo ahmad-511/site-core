@@ -5,6 +5,7 @@ namespace App\Core;
 use App\Core\Router;
 use App\Core\Request;
 use App\Core\Auth;
+use DateTime;
 
 /** This class provides necessary functions used in different places through out the system **/
 class App{
@@ -155,6 +156,35 @@ class App{
     }
     
     /**
+     * Convert client date to server date
+     * @param DateTime $clientDate Date time as recieved from the client
+     * @param int $clientOffset the time offset on the client machine
+     * @return DateTime new client date according to server timezone 
+     */
+    public static function clientDate(DateTime $clientDate, int $clientOffset = 0):DateTime{
+        $newDate = clone $clientDate;
+
+        $minutes = abs($clientOffset);
+        
+        if($clientOffset > 0){
+            $newDate->add(new \DateInterval("PT{$minutes}M"));
+        }else{
+            $newDate->sub(new \DateInterval("PT{$minutes}M"));
+        }
+
+        $serverDate = new \DateTime(date('Y-m-d H:i'));
+        $serverOffset = $serverDate->getOffset();
+
+        if($clientOffset > 0){
+            $newDate->sub(new \DateInterval("PT{$serverOffset}S"));
+        }else{
+            $newDate->add(new \DateInterval("PT{$serverOffset}S"));
+        }
+
+        return $newDate;
+    }
+
+    /**
      * Localize specified string using specified language (use App's current language if omitted)
      * @param string $str string to be localized
      * @param string|empty $lang language code
@@ -203,13 +233,13 @@ class App{
         
         $params = null;
 
-        // Check if string includes varinat in it
+        // Check if string includes variant in it
         if(preg_match('#\[(.+?)\]$#', $str, $matches)){
             $str = str_replace($matches[0], '', $str);
             $variant = $matches[1];
         }
 
-        // Get string from specified dectionary
+        // Get string from specified dictionary
         if(array_key_exists($str, $dics[$lang])){
             $val = $dics[$lang][$str];
 
@@ -285,7 +315,7 @@ class App{
      * @return int Page's start record offset
      */
     public static function getPageOffset($pageNum, $limit = RECORDS_PER_PAGE){
-        $pageNum = abs($pageNum??1);
+        $pageNum = abs(intval($pageNum)??1);
         
         if($pageNum < 1){
             $pageNum = 1;

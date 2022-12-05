@@ -36,10 +36,18 @@ class Request
     }
 
     /**
+     * Get current request uri
+     * @return string Request uri
+     */
+    public static function getURI():string{
+        return $_SERVER['REQUEST_URI']??'';
+    }
+
+    /**
      * @return string current locale code
      */
     public static function getLocaleCode():string{
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '')['path'];
+        $path = parse_url(self::getURI())['path'];
         $path = trim($path, '/');
         $path = explode('/', $path, 2);
 
@@ -54,7 +62,7 @@ class Request
      * @return string The path part of the current request
      */
     public static function getPath($ignoreLocale = true):string{
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '')['path'];
+        $path = parse_url(self::getURI())['path'];
         
 
         if($ignoreLocale) {
@@ -99,6 +107,27 @@ class Request
     public static function getQueryString():string
     {
         return $_SERVER["QUERY_STRING"];
+    }
+
+    /**
+     * Get all request headers
+     * @return array array of headers as key/value pairs
+     */
+    public static function getAllHeaders():array
+    {
+        return getallheaders();
+    }
+
+    /**
+     * Get request header
+     * @param string header key
+     * @return string header value
+     */
+    public static function getHeader($str):string
+    {
+        $headers = self::getAllHeaders();
+
+        return $headers[$str]??'';
     }
 
     /**
