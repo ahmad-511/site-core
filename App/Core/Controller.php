@@ -7,5 +7,5 @@ namespace App\Core;
  * Base controller class
  */
 abstract class Controller {
-    
+
 }

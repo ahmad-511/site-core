@@ -85,7 +85,7 @@ class Account extends Model {
 
     public function Read(array $params = []): Result
     {
-        $sql = "SELECT a.account_id, a.role, a.gender, a.first_name, a.last_name, a.email, a.email_verification, a.mobile, a.'' AS password, a.preferred_language, , IFNULL(att.path, 'x') AS personal_photo, a.register_date, a.admin_notes, a.account_status
+        $sql = "SELECT a.account_id, a.role, a.gender, a.first_name, a.last_name, a.email, a.email_verification, a.mobile, '' AS password, a.preferred_language, IFNULL(att.path, 'x') AS personal_photo, a.register_date, a.admin_notes, a.account_status
             FROM accounts AS a
             LEFT JOIN attachments AS att ON a.account_id = att.account_id AND att.type = 'PersonalPhoto'";
 
@@ -342,7 +342,7 @@ class Account extends Model {
     }
 
     public function Login(array $params = []):Result{
-        $sql = "SELECT account_id, a.role, a.gender, a.first_name, a.country_code, a.last_name, a.email, a.mobile, IFNULL(att.path, 'x') AS personal_photo, account_status, a.lookup_token, a.validator_token,
+        $sql = "SELECT account_id, a.role, a.gender, a.first_name, a.country_code, a.last_name, a.email, a.mobile, IFNULL(att.path, 'x') AS personal_photo, a.account_status, a.lookup_token, a.validator_token,
             FROM accounts AS a
             LEFT JOIN attachments AS att ON a.account_id = att.account_id and att.type = 'PersonalPhoto'
             WHERE (email = :email_mobile OR CONCAT(REPLACE(c.dialing_code, '+', ''), mobile) = :email_mobile) AND password = :password

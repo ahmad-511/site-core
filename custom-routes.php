@@ -1,6 +1,7 @@
 <?php
 use App\Core\Router;
 use App\Controller\AccountController;
+
 // Router::get('/test2/{id}', function($reqParams){
 //     return 'Hello, this is a test with ID #'.$reqParams['id'];
 // });
