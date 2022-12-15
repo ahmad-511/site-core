@@ -195,6 +195,36 @@ class Router{
         self::$Routes[] = $route;
     }
 
+    /** Add custom PUT route
+     * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
+     * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
+     * @param string $name Route name (optional), used to build a route path from its name
+    */
+    public static function put($path, $controller, $name = ''){
+        $route = new Route('put', $path, $controller, $name);
+        self::$Routes[] = $route;
+    }
+
+    /** Add custom PATCH route
+     * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
+     * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
+     * @param string $name Route name (optional), used to build a route path from its name
+    */
+    public static function patch($path, $controller, $name = ''){
+        $route = new Route('patch', $path, $controller, $name);
+        self::$Routes[] = $route;
+    }
+
+    /** Add custom DELETE route
+     * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
+     * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
+     * @param string $name Route name (optional), used to build a route path from its name
+    */
+    public static function delete($path, $controller, $name = ''){
+        $route = new Route('delete', $path, $controller, $name);
+        self::$Routes[] = $route;
+    }
+
     /** Add custom route regardless of the method
      * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
      * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
