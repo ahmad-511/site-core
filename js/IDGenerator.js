@@ -1,4 +1,4 @@
-export default class ID {
+export default class IDGenerator {
     constructor(seed = 0, useSession = false) {
         if (useSession) {
             this.seed = localStorage.getItem('IDGenerator-Seed') || 0;

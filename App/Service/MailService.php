@@ -2,7 +2,7 @@
 declare (strict_types = 1);
 namespace App\Service;
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Result;
 use App\Core\Service;
 use App\Model\MailProvider;
@@ -106,7 +106,7 @@ class MailService extends Service
 
         return new Result(
             $queueID,
-            App::loc('Message sent'),
+            L::loc('Message sent'),
             'success'
         );
     }
@@ -138,7 +138,7 @@ class MailService extends Service
         if(empty($providers)){
             return new Result(
                 0,
-                App::loc('Mail providers out of capacity'),
+                L::loc('Mail providers out of capacity'),
                 'info'
             );
         }

@@ -1,4 +1,5 @@
-import xhr from '/js/xhr.js';
+import xhr from '/js/xhr.js'
+import plural from '/js/plural.js'
 
 export function $(selector, elem) {
     return (elem || document).querySelector(selector);
@@ -18,36 +19,6 @@ export function nl2p(str) {
     return '<p>' + str.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, '</p><p>') + '</p>';
 }
 
-export function plural(word, count) {
-    if (count < 2) {
-        return word;
-    }
-
-    word = word.toString();
-
-    const vowels = ['a', 'e', 'i', 'o', 'u', 'y'];
-    let suffix = 's';
-
-    let lastLetter = word.substr(-1, 1);
-    const isUpperCase = (lastLetter == lastLetter.toUpperCase());
-
-    lastLetter = lastLetter.toLowerCase();
-
-    if (lastLetter == 'y') {
-        const beforeY = word.substr(-2, 1);
-        if (vowels.indexOf(beforeY) > -1) {
-            suffix = 's';
-        } else {
-            word = word.substr(0, word.length - 1);
-            suffix = 'ies';
-        }
-    } else if (['x', 's'].indexOf(lastLetter) > -1) {
-        suffix = 'es';
-    }
-
-    return word + (isUpperCase ? suffix.toUpperCase() : suffix);
-}
-
 export function errorInResponse(resp, silentMode) {
     silentMode = !!silentMode;
     let msg = '';
@@ -63,7 +34,7 @@ export function errorInResponse(resp, silentMode) {
 
         case 'BAD_JSON_FORMAT':
             resp = {
-                message: 'Bad JSON formt',
+                message: 'Bad JSON format',
                 messageType: 'error'
             };
             break;
@@ -93,7 +64,7 @@ export function errorInResponse(resp, silentMode) {
     if (resp.messageType == 'reference_error') {
         isError = true;
 
-        msg = `${msg}\n- ${resp.data.map(i => `${i.references} ${plural(i.model, i.references)}`).join('\n- ')}`;
+        msg = `${msg}\n&bull; ${resp.data.map(i => `${i.references} ${plural(i.model, i.references)}`).join('\n&bull; ')}`;
     }
 
     if (msg && !silentMode) {
@@ -146,27 +117,25 @@ export function showMessage(message, messageType, time) {
     }, 10)
 }
 
+export function showModal(modal) {
+    if(modal.tagName == 'DIALOG'){
+        modal.show()
+    }else{
+        modal.classList.add('show');
+    }
 
-export function showDialog(dialog) {
-    dialog.classList.add('show');
     document.body.classList.add('no-scroll');
-    dialog.scroll(0, 0);
+    modal.scroll(0, 0);
 }
 
-export function hideDialog(dialog) {
-    dialog.classList.remove('show');
+export function hideModal(modal) {
+    if(modal.tagName == 'DIALOG'){
+        modal.close()
+    }else{
+        modal.classList.remove('show');
+    }
+
     document.body.classList.remove('no-scroll');
-}
-
-export function showDataEditor(dataEditor, oper) {
-    dataEditor.classList.remove('search', 'create', 'update');
-    dataEditor.classList.add(oper);
-    showDialog(dataEditor);
-}
-
-export function hideDataEditor(dataEditor) {
-    dataEditor.classList.remove('search', 'create', 'update');
-    hideDialog(dataEditor);
 }
 
 export function resetForm(form, useSearchDefault) {
@@ -175,7 +144,7 @@ export function resetForm(form, useSearchDefault) {
     // Normal reset
     form.reset();
 
-    // Reset elements with data-default attribte (used for hidden fields mostly as they don't get affected by normal reset)
+    // Reset elements with data-default attribute (used for hidden fields mostly as they don't get affected by normal reset)
     $$('input[data-default], select[data-default], textarea[data-default]', form).forEach(elem => {
         elem.value = elem.dataset.default;
     });
@@ -220,6 +189,62 @@ export function updateRecordsStats(container, totalRecords, currentPage, totalPa
     }
 
     container.textContent = `${strPage} ${currentPage} ${strOf} ${totalPages} (${totalRecords} ${strRecords})`;
+}
+
+export function renderPagination(container, currPage, totalRecords, recordsPerPage, options ={}){
+    options = Object.assign({
+        buttonsCount: 5,
+        displayFirst: true,
+        displayLast: true,
+        displayPrevious: true,
+        displayNext: true
+    }, options)
+    container.innerHTML = '';
+
+    const pageCount = Math.ceil(totalRecords / recordsPerPage);
+    
+    let prevPage = +currPage - 1;
+    if(prevPage < 1){
+        prevPage = 1;
+    }
+
+    let nextPage = +currPage + 1;
+    if(nextPage > pageCount){
+        nextPage = pageCount;
+    }
+
+    let pagination = [];
+    if(pageCount > 1){
+        options.displayFirst && pagination.push(`<a href="#" data-page="1">&laquo;</a>`);
+        options.displayPrevious && pagination.push(`<a href="#" data-page="${prevPage}">&lsaquo;</a>`);
+
+        let start = +currPage - Math.ceil(options.buttonsCount / 2);
+        if(start < 1){
+            start = 1
+        }
+
+        let end  = start + (options.buttonsCount - 1);
+        if(end > pageCount){
+            end = pageCount
+        }
+
+        // Make sure we always have pages buttons as specified in buttonsCount
+        if(end - start < (options.buttonsCount - 1)){
+            start -= (options.buttonsCount - 1) - (end - start);
+            if(start < 1){
+                start = 1;
+            }
+        }
+
+        for(let i = start; i <= end; i++){
+            pagination.push(`<a href="#" class="${i == currPage?'current-page':''}" data-page="${i}">${i}</a>`);       
+        }
+
+        options.displayNext && pagination.push(`<a href="#" data-page="${nextPage}">&rsaquo;</a>`);
+        options.displayNext && pagination.push(`<a href="#" data-page="${pageCount}">&raquo;</a>`);
+
+        container.innerHTML = pagination.join('');
+    }
 }
 
 export function logout(all_devices, lang) {
@@ -289,7 +314,7 @@ export function generatePropertyList(data) {
 export function markRequired(){
     $$('[required]').forEach(inp => {
         if(inp.labels){
-            inp.labels[0].classList.add('required');
+            inp.labels[0]?.classList.add('required');
         }
     });
 }
@@ -302,6 +327,22 @@ export function addShowPassword(){
 
         showIcon.addEventListener('click', e => {
             inp.type = inp.type == 'password'? 'text': 'password';
+            showIcon.className = (inp.type == 'password'? 'icon-eye': 'icon-eye-blocked') + ' show-password';
         });
     });
+}
+
+export function dateToInputString(dt, withTime = false){
+    if(!(dt instanceof Date)){
+        return dt
+    }
+
+    let d = new Date(dt)
+    let strDate = `${d.getFullYear().toString().padStart(2, 0)}-${(d.getMonth() + 1).toString().padStart(2, 0)}-${d.getDate().toString().padStart(2, 0)}`
+
+    if(withTime){
+        strDate += ` ${d.getHours().toString().padStart(2, 0)}:${d.getMinutes().toString().padStart(2, 0)}:${d.getSeconds().toString().padStart(2, 0)}`
+    }
+
+    return strDate
 }

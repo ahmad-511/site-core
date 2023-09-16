@@ -207,8 +207,8 @@ export default class Template {
         const matches = str.matchAll(rIf);
 
         for (const match of matches) {
-            const contidtion = match[2].trim().replace(/\n/g, '');
-            const result = this.parse(contidtion);
+            const condition = match[2].trim().replace(/\n/g, '');
+            const result = this.parse(condition);
 
             if (result instanceof Error) continue;
 

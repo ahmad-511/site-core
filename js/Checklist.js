@@ -21,6 +21,10 @@ export default class Checklist {
         })
     }
 
+    listen(event, callback){
+        this.events.listen(event, callback);
+    }
+
     render(data) {
         this.container.innerHTML = '';
         this.data = data || this.data || [];
@@ -68,7 +72,7 @@ export default class Checklist {
     }
 
     setSelected(ids) {
-        // Convert ids to string for none strict comparision
+        // Convert ids to string for none strict comparison
         ids = ids.map(id => id.toString());
 
         let checkedCount = 0;

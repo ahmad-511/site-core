@@ -2,7 +2,7 @@
 declare (strict_types = 1);
 namespace App\Cron\AccountFunctions;
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Crypto;
 use App\Core\Router;
 use App\Model\Account;
@@ -24,13 +24,13 @@ function WarnPending(int $pendingDays = 10, int $extendedDays = 5){
 
         // Encrypt account id with verification code to be used in verification link
         $verificationCode = Crypto::Encrypt($a['account_id'] . ';' . $a['email_verification']);
-        $a['email_verification_view_url'] = WEBSITE_URL . Router::routeUrl('verify-my-mobile-view', ['verification_code' => $verificationCode], $a['preferred_language'], false);
-        $a['mobile_verification_view_url'] = WEBSITE_URL . Router::routeUrl('verify-my-mobile-view', [], $a['preferred_language'], false);
-        $a['login_view_url'] = WEBSITE_URL . Router::routeUrl('login-view', [], $a['preferred_language'], false);
+        $a['email_verification_view_url'] = WEBSITE_URL . Router::route('verify-my-mobile-view', ['verification_code' => $verificationCode], $a['preferred_language'], false);
+        $a['mobile_verification_view_url'] = WEBSITE_URL . Router::route('verify-my-mobile-view', [], $a['preferred_language'], false);
+        $a['login_view_url'] = WEBSITE_URL . Router::route('login-view', [], $a['preferred_language'], false);
         
         $messages[] = [
             $a['email'],
-            App::loc('Your account is subject to deletion', $a['preferred_language']),
+            L::loc('Your account is subject to deletion', $a['preferred_language']),
             'email-deletion-warning', 
             $a,
             true,
@@ -59,7 +59,7 @@ function DeleteWarned(int $pendingDays = 15){
         
         $messages[] = [
             $a['email'],
-            App::loc('Your account has been deleted', $a['preferred_language']),
+            L::loc('Your account has been deleted', $a['preferred_language']),
             'email-deletion', 
             $a,
             true,

@@ -3,7 +3,7 @@ declare (strict_types = 1);
 
 namespace App\Model;
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Model;
 use App\Core\Result;
 
@@ -57,7 +57,7 @@ class MailQueue extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'mail queue']),
+                L::loc('Failed to read {object}', '', ['object' => 'mail queue']),
                 'error'
             );
         }

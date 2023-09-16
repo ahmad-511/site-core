@@ -1,5 +1,5 @@
-import { $, $$ } from '/App/js/main.js';
-import EventEmitter from "/App/js/EventEmitter.js";
+import { $, $$ } from '/js/main.js';
+import EventEmitter from "/js/EventEmitter.js";
 
 export default class Tree {
     constructor(container, data, childIdCol, parentIdCol, displayCol, valueCol) {
@@ -29,6 +29,10 @@ export default class Tree {
                 this.events.emit('item-selected', this.selectedElement, this.selectedData);
             }
         });
+    }
+
+    listen(event, callback){
+        this.events.listen(event, callback);
     }
 
     setDisplayField(elem) {

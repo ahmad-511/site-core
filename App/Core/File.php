@@ -4,16 +4,16 @@ namespace App\Core;
 
 class File {
     public string $name;
-    public string $type;
+    public string $mimeType;
     public string $tmpName;
     public string $error;
     public int $size;
     public string $path;
 
-    public function __construct(string $name = '', string $type = '', string $tmpName = '', string $error = '', int $size = 0, string $path = '')
+    public function __construct(string $name = '', string $mimeType = '', string $tmpName = '', string $error = '', int $size = 0, string $path = '')
     {
         $this->name = $name;
-        $this->type = $type;
+        $this->mimeType = $mimeType;
         $this->tmpName = $tmpName;
         $this->error = $error;
         $this->size = $size;

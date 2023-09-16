@@ -30,7 +30,7 @@ class Path{
      * @return string The file path of the localized version
      */
     public static function getLocalePath($dir, $file, $lang = ''){
-        // Use defaul langauge code if not specified
+        // Use default language code if not specified
         if(empty($lang)){
             $lang = self::$DefaultLocale;
         }
@@ -65,18 +65,18 @@ class Path{
     }
 
     /**
-     * Creat path from path sigments
-     * @param array $sigments Array of path sigments
-     * @return string Path combined from sigments joined by the system directory separator
+     * Create path from path segments
+     * @param array $segments Array of path segments
+     * @return string Path combined from segments joined by the system directory separator
      */
-    public static function combine(...$segmenets){
-        $segmenets = array_map(function($seg){
+    public static function combine(...$segments){
+        $segments = array_map(function($seg){
             $seg = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $seg);
             $seg = trim($seg, DIRECTORY_SEPARATOR);
 
             return $seg;
-        }, $segmenets);
+        }, $segments);
 
-        return implode(DIRECTORY_SEPARATOR, $segmenets);
+        return implode(DIRECTORY_SEPARATOR, $segments);
     }
 }

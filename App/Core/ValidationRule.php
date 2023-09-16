@@ -3,7 +3,16 @@ declare (strict_types = 1);
 namespace App\Core;
 
 class ValidationRule {
-    
+    public static function ifSet(Callable $func){
+        return function($value) use($func){
+            if(empty($value)){
+                return true;
+            }
+
+            return $func($value);
+        };
+    }
+
     /**
      * Check if value in the specified list
      * @param array $list List of accepted values
@@ -68,7 +77,7 @@ class ValidationRule {
      */
     public static function boolean(){
         return function($value){
-            return filter_var($value, FILTER_VALIDATE_BOOLEAN) !== false;
+            return filter_var($value, FILTER_VALIDATE_BOOL) !== false;
         };
     }
 
@@ -97,6 +106,22 @@ class ValidationRule {
     }
 
     /**
+     * Check if value is a string with specific length
+     * @param int $length the accepted length
+     * @return callable
+     */
+    public static function char(int $length = 0){
+        return function($value)use($length){
+            if(!is_string($value)){
+                return false;
+            }
+            
+            $len = mb_strlen($value);
+            return $len == $length;
+        };
+    }
+
+    /**
      * Check if value is a string
      * @param int $min (optional) the minimum accepted length
      * @param int $max (optional) the maximum accepted length
@@ -104,8 +129,12 @@ class ValidationRule {
      */
     public static function string(int $min = 0, int $max = PHP_INT_MAX){
         return function($value)use($min, $max){
+            if(!is_string($value)){
+                return false;
+            }
+
             $len = mb_strlen($value);
-            return is_string($value) && $len >= $min && $len <= $max;
+            return $len >= $min && $len <= $max;
         };
     }
 

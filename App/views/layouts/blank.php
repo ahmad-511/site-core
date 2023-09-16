@@ -47,8 +47,6 @@ $pageDir = (Router::getCurrentLocaleCode() == 'ar')?'rtl':'ltr';
 
 <body class="<?= strtolower(Router::getCurrentLayout(true)), '-layout ', strtolower(Router::getCurrentFileName(true)), '-view'?>">
 
-<?php Router::renderContent('partials/header') ?>
-
 <main>
     <?= Router::getViewContent() ?>
 </main>

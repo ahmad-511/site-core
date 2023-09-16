@@ -7,7 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Result;
 use App\Core\Route;
-use App\Core\GuradResult;
+use App\Core\GuardResult;
 
 class Router{
     private static bool $AutoRouting = true;
@@ -16,18 +16,18 @@ class Router{
     private static string $DefaultLocale = 'en';
     private static array $LocaleMapper = [];
     private static string $ViewsDir = __DIR__ .'/../views/';
-    private static string $AccessDeniedView = 'access-denied';
-    private static string $PageNotFoundView = 'page-not-found';
+    private static string $ErrorView = 'error';
     private static string $RedirectViewSession = 'redirect_view';
     private static string $NullParamValue = '.';
     
     private static bool $CaseSensitivity = true;
-    private static string $CurrentLayout = 'main';
+    private static string $DefaultLayout = 'main';
     private static array $Routes = [];
 
     private static string $CurrentRouteName = '';
     private static string $CurrentLocaleCode = '';
     private static string $CurrentFileName = '';
+    private static ?string $CurrentLayout = null;
 
     private static $ViewContent = '';
 
@@ -51,7 +51,7 @@ class Router{
 
     /**
      * Set accepted locale codes
-     * @param array $localeCodes Array of accepted language locale codes the router can use to detect the language if one of these codes present in the request url's first sigment
+     * @param array $localeCodes Array of accepted language locale codes the router can use to detect the language if one of these codes present in the request url's first segment
      * @return void
      */
     public static function setLocales(array $localeCodes){
@@ -94,21 +94,12 @@ class Router{
     }
 
     /**
-     * Set access denied view code
-     * @param string $accessDeniedView
+     * Set error view name
+     * @param string $errorView error view file name
      * @return void
      */
-    public static function setAccessDeniedView(string $accessDeniedView = ''){
-        self::$AccessDeniedView = $accessDeniedView;
-    }
-
-    /**
-     * Set page not found view code
-     * @param string $pageNotFoundView
-     * @return void
-     */
-    public static function setPageNotFoundView(string $pageNotFoundView = ''){
-        self::$PageNotFoundView = $pageNotFoundView;
+    public static function setErrorView(string $errorView = ''){
+        self::$ErrorView = $errorView;
     }
 
     /**
@@ -121,7 +112,7 @@ class Router{
     }
 
     /**
-     * Set the value that will be used if passed param value is null or empty string (Used when generating routeUrl)
+     * Set the value that will be used if passed param value is null or empty string (Used when generating route url)
      * @param string $NullParamValue
      * @return void
      */
@@ -136,6 +127,15 @@ class Router{
      */
     public static function setCaseSensitivity(bool $isCaseSensitive = true){
         self::$CaseSensitivity = $isCaseSensitive;
+    }
+
+    /**
+     * Set current layout
+     * @param string $layout file to be used in current view rendering
+     * @return void
+     */
+    public static function setCurrentLayout(string $currentLayout){
+        self::$CurrentLayout = $currentLayout;
     }
 
     /**
@@ -159,6 +159,14 @@ class Router{
     }
 
     /**
+     * Get current layout name
+     * @return string Layout file name (without extension)
+     */
+    public static function getCurrentLayout(){
+        return self::$CurrentLayout;
+    }
+
+    /**
      * Get current locale code
      * @return string Locale code
      */
@@ -178,7 +186,7 @@ class Router{
      * Add custom GET route
      * @param string $path Route path (/home, /about, /something/something-else/whatever,...)
      * @param string|function|array $controller If it's a string it's a view code, if it's a function it must return the view contents, if it's an array as [class, method] it can return Result or anything
-     * @param string $name Route name (optional), used to build a route path from itss name
+     * @param string $name Route name (optional), used to build a route path from its name
     */
     public static function get($path, $controller, $name = ''){
         $route = new Route('get', $path, $controller, $name);
@@ -245,15 +253,15 @@ class Router{
             return self::$LocaleMapper[$routeName];
         }
 
-        // Get locale code using the first sigment from the request url
-        $localeCode = strtolower(Request::getURISegments(false)[0]??'');
+        // Get locale code using the first segment from the request url
+        $localeCode = strtolower(Request::getURLSegments(false)[0]??'');
         
         // Make sure that found locale code is accepted
         if(!in_array($localeCode, self::$Locales)){
             $localeCode = '';
         }
 
-        // Use defaule router's locale
+        // Use default router's locale
         if(empty($localeCode)){
             $localeCode = self::$DefaultLocale;
         }
@@ -262,14 +270,18 @@ class Router{
     }
 
     /**
-     * Get view full url combined with locale code
+     * Get full route url combined with locale code
      * @param string $routeName Route name
      * @param array $params Route parameters
      * @param string $localeCode Locale code
      * @param boolean $omitDefaultLocale Don't include locale code for default route locale
      * @return string Localized url for the view with view code words uppercased
     */
-    public static function routeUrl($routeName, $params = [], $localeCode = '', $omitDefaultLocale = true){
+    public static function route($routeName, $params = [], $localeCode = '', $omitDefaultLocale = true){
+        if(is_null($params )){
+            $params = [];
+        }
+
         if(empty($localeCode)){
             $localeCode = strtolower(self::getLocaleCode($routeName));
         }
@@ -295,10 +307,12 @@ class Router{
 
         if(!empty($path)){
             // Replace route params
-            if(!empty($params)){
-                // Store a copy of original route params to be used in replacing un-named params (values passed as sequencial array)
-                preg_match_all("#\{.+?\}#", $path, $origParams);
-                $origParams = $origParams[0];
+            // Store a copy of original route params to be used in replacing un-named params (values passed as sequential array)
+            preg_match_all("#\{.+?\}#", $path, $origParams);
+            $origParams = $origParams[0];
+            
+            if(!empty($origParams)){
+                //$params = array_pad($params, count($origParams), self::$NullParamValue);
 
                 // Replace named params
                 foreach($params as $n => $v){
@@ -315,7 +329,7 @@ class Router{
                     return is_numeric($key);
                 }, ARRAY_FILTER_USE_KEY);
 
-                // Replace sequencial params with respect to original params order
+                // Replace sequential params with respect to original params order
                 $path = preg_replace_callback("#\{.+?\}#", function($m) use($params, $origParams) {
                     $pos = array_search($m[0], $origParams);
 
@@ -332,7 +346,7 @@ class Router{
                 }, $path);
 
                 // Clean up optional params
-                $path = preg_replace("#\{.+?\?}#", ".", $path);
+                $path = preg_replace("#\{([^{]+?)\?\}#", self::$NullParamValue, $path);
             }
         }elseif(is_null($path)){ // Use route name as path for auto routes
             $path = ucwords($routeName);
@@ -343,7 +357,10 @@ class Router{
             }
         }
 
-        if(substr($path, 0, 1) != '/'){
+        // Clean up path ending null params
+        $path = preg_replace('#(' . preg_quote('/' . self::$NullParamValue) . ')+$#', '', $path);
+
+        if(!str_starts_with($path, '/')){
             $path = '/' . $path;
         }
 
@@ -391,21 +408,21 @@ class Router{
         return false;
     }
 
-    public static function getPageNothFoundPath($localeCode = ''){
-        // Use localized version of the page not found view
-        $path = self::$ViewsDir .$localeCode . DIRECTORY_SEPARATOR .self::$PageNotFoundView . '.php';
+    public static function getErrorViewPath($localeCode = ''){
+        // Use localized version of the error view
+        $path = self::$ViewsDir .$localeCode . DIRECTORY_SEPARATOR .self::$ErrorView . '.php';
             
-        // Use original page not found path
+        // Use original error view path
         if (!file_exists($path)) {
-            $path = self::$ViewsDir .self::$PageNotFoundView . '.php';
+            $path = self::$ViewsDir .self::$ErrorView . '.php';
         }
 
         return $path;
     }
 
     /** Set new layout file to be used when rendering a view */
-    public static function setLayout($layout){
-        self::$CurrentLayout = $layout;
+    public static function setDefaultLayout($layout){
+        self::$DefaultLayout = $layout;
     }
 
     /** Routing starting point, called once in the index.php entry file */
@@ -419,9 +436,8 @@ class Router{
             if(self::$AutoRouting){
                 self::autoRouting();
             }else{
-                // Send only 404 response when requested path pointing to inexisting file
-                Response::setStatus(404);
-                self::renderView(self::$PageNotFoundView, []);
+                // Send only 404 response when requested path is not in custom routing list nor can be automatically determined using the file structure
+                self::sendError(404, 'Undefined route');
             }
         }
     }
@@ -438,7 +454,7 @@ class Router{
             }
 
             $quotedPath = preg_quote($route->path);
-            $pattern = '#^' . preg_replace(['/\\/\\\{.+?\\?\\\}/', '/\\\{.+?\\\}/'], ['(?:/(.+?))?', '(.+?)'], $quotedPath, -1, $paramsCount) . '$#';
+            $pattern = '#^' . preg_replace(['/\\/\\\{[^{]+?\\?\\\}/', '/\\\{[^{]+?\\?\\\}/', '/\\\{.+?[^?]\\\}/'], ['(?:/([^{]+?))?', '(?:([^{]+?))?', '([^{]+?)'], $quotedPath, -1, $paramsCount) . '$#';
 
             if(!self::$CaseSensitivity){
                 $pattern .= 'i';
@@ -455,8 +471,9 @@ class Router{
                 if($paramsCount > 0){
                     // Extract path params names
                     $pattern = strtr($pattern,[
-                        '(?:/(.+?))?' => '/{(.+?)\?}',
-                        '(.+?)' => '{(.+?)}'
+                        '(?:/([^{]+?))?' => '/\{([^{]+?)\?\}',
+                        '(?:([^{]+?))?' => '\{([^{]+?)\?\}',
+                        '([^{]+?)' => '\{([^{]+?)\}'
                     ]);
 
                     preg_match($pattern, $route->path, $pNames);
@@ -481,17 +498,17 @@ class Router{
         if(!empty($controller)){
             // When controller is a string it represents the view code
             if(is_string($controller)){
-                self::renderView($controller, $params);
+                $result = new View($controller, $params, '', '', 200, ['Content-Type: text/html']);
+                self::sendResponse($result);
                 
                 return true;
             }elseif(is_array($controller) && is_callable($controller, true)){
                 self::executeController($controller[0], $controller[1], $params);
                 
                 return true;
-            }elseif(is_callable($controller)){
-                // When controller is a function the view content must be returned by it
-                $viewContent = $controller($params);
-                self::renderLayout($viewContent);
+            }elseif($controller instanceof \Closure){
+                $result = $controller($params);
+                self::sendResponse($result);
                 
                 return true;
             }
@@ -505,35 +522,34 @@ class Router{
         $routeName = self::getAutoRouteName();
         self::$CurrentRouteName = $routeName;
 
-        // Use $URISegments as method params for both views and controllers
-        $URISegments = Request::getURISegments();
+        // Use $URLSegments as method params for both views and controllers
+        $URLSegments = Request::getURLSegments();
 
         // All API calls
         if ($routeName == 'api') {
-            $controller = $URISegments[1] ?? '';
-            $method = $URISegments[2] ?? '';
+            $controller = $URLSegments[1] ?? '';
+            $method = $URLSegments[2] ?? '';
 
             $controller = '\\App\\Controller\\'.$controller.'Controller';
             self::$CurrentRouteName = $controller.'\\'.$method;
 
-            // Execlude controller and method names from the params list
-            self::executeController($controller, $method, array_slice($URISegments, 3));
+            // Exclude controller and method names from the params list
+            self::executeController($controller, $method, array_slice($URLSegments, 3));
 
             return;
         }else{
-            self::renderView($routeName, $URISegments);
-
+            self::sendResponse(new View($routeName, $URLSegments, '', '', 200, ['Content-Type: text/html']));
             return;
         }
     }
 
     /** 
-     * Get route name from request url using first sigment (ingonring locale sigment)
-     * @return string Route name from the first uri segment if it has one or more sigment (excluding locale code sigment), home page code otherwise
+     * Get route name from request url using first segment (ignoring locale segment)
+     * @return string Route name from the first url segment if it has one or more segment (excluding locale code segment), home page code otherwise
     */
     private static function getAutoRouteName()
     {
-        $segments = Request::getURISegments();
+        $segments = Request::getURLSegments();
         $routeName = strtolower($segments[0]??'');
         
         // Use home page view code if nothing is specified
@@ -548,52 +564,81 @@ class Router{
     public static function executeController($controller, $method, $params = []){
         $guardResult = self::controllerExecutionGuard($controller, $method);
 
-
         if (!$guardResult->isAllowed) {
-            $result = new Result(null, $guardResult->message?? "You do not have necessary privileges to call $controller::$method", 'error', $guardResult->redirectFileName);
-            Response::send($result, 403);
+            self::sendError($guardResult->statusCode, $guardResult->message?? "You do not have necessary privileges to call $controller::$method", $guardResult->redirectViewCode);
         }
 
         if (class_exists($controller)) {
             // Instantiate controller with POST params
             $obj = new $controller(Request::body());
         } else {
-            $result = new Result(null, "Controller $controller doesn't exist", 'error');
-            Response::send($result, 404);
+            self::sendError(404, "Controller $controller doesn't exist");
         }
 
         if (!method_exists($obj, $method)) {
-            $result = new Result(null, "Method $controller::$method doesn't exist", 'error');
-            Response::send($result, 404);
+            self::sendError(404, "Method $controller::$method doesn't exist");
         }
 
-        // Call controller's method and pass all URI segments as params
+        // Call controller's method and pass all URL segments as params
         try {
             $result = $obj->$method($params);
-            // If result is null, the view is rendered from controller, ex: Router::renderView('view name')
-            if(is_null($result)){
-                return;
-            }
-
-            if ($result instanceof Result) {
-                Response::send($result);
-            } else {
-                echo $result;
-            }
+            self::sendResponse($result);
 
         } catch (\Exception $ex) {
-            $result = new Result(null, $ex->getMessage(), 'exception');
-            Response::send($result, 500);
+            self::sendError(500, $ex->getMessage());
         }
     }
+
+    private static function sendError($statusCode, $message = '', $redirect = ''){
+        if(Request::accept('application/json')){
+            $result = new Result(null, $message, 'error', $redirect);
+            self::sendResponse($result, $statusCode, ['application/json']);
+            return;
+        }
+
+        $view = new View('error', [
+                "statusCode" => $statusCode,
+                "errorMessage" => $message,
+                "redirect" => $redirect
+            ], '', '' ,$statusCode, ['Content-Type: text/html']);
+        self::sendResponse($view);
+    }
     
+    private static function sendResponse($result, int $statusCode = 200, array $headers = []){
+        if($result instanceof Response){ 
+            Response::send($result);
+
+        }elseif($result instanceof View){
+            self::$CurrentLayout = $result->layout;
+
+            // Render the view
+            $viewContent = self::renderView($result->fileName, $result->params, $result->localeCode);
+
+            // View layout can be changed from within currently rendered view by calling Router::setCurrentLayout()
+            if(self::$CurrentLayout != $result->layout){
+                $result->layout = self::$CurrentLayout;
+            }
+            
+            // Merge view content with specified layout file template
+            $viewContent = self::renderLayout($viewContent, $result->layout);
+            Response::sendRaw($viewContent, $result->statusCode, $result->headers);
+            return;
+
+        }elseif ($result instanceof Result) {
+            Response::json($result, $statusCode, $headers);
+            return;
+        }
+        
+        Response::sendRaw($result, $statusCode, $headers);
+        return;
+    }
+
     /** Load view content with currently used layout */
-    public static function renderView($fileName, $params = [], $localeCode = null){
+    public static function renderView(string $fileName, array $params = [], string $localeCode = null){
         if(empty(self::$CurrentRouteName)){
             self::$CurrentRouteName = $fileName;
 
-            $isViewSuffix = substr(self::$CurrentRouteName, -strlen('-view'));
-            if($isViewSuffix != '-view'){
+            if(!str_ends_with(self::$CurrentRouteName, '-view')){
                 self::$CurrentRouteName .= '-view';
             }
         }
@@ -602,27 +647,24 @@ class Router{
             $localeCode = self::getCurrentLocaleCode();
         }
 
-        $viewContent = self::loadViewContent($fileName, $params, $localeCode);
-        // Load layout file template
-        self::renderLayout($viewContent);
+        return self::loadViewContent($fileName, $params, $localeCode);
     }
 
     /** Load view content */
     private static function loadViewContent(string $fileName, array $params = [], $localeCode = null){
         // If CurrentRouteName is not set by customRouting function then use the automatic one
-        if(empty(self::$CurrentRouteName)){
+        if(empty(self::$CurrentRouteName) || (!empty($fileName) && self::$CurrentRouteName != $fileName)){
             self::$CurrentRouteName = $fileName;
 
-            $isViewSuffix = substr(self::$CurrentRouteName, -strlen('-view'));
-            if($isViewSuffix != '-view'){
+            if(!str_ends_with(self::$CurrentRouteName, '-view')){
                 self::$CurrentRouteName .= '-view';
             }
         }
         
-        [$redirectFileName, $guardMessage] = self::viewAccessGuard(self::$CurrentRouteName);
+        $guardResult = self::viewAccessGuard(self::$CurrentRouteName);
         
-        if(!empty($redirectFileName)){
-            $fileName = $redirectFileName;
+        if(!empty($guardResult->redirectViewCode)){
+            $fileName = $guardResult->redirectViewCode;
         }
 
         self::$CurrentFileName = $fileName;
@@ -636,7 +678,11 @@ class Router{
 
         // Add guard message (if any) in params
         $params = $params??[];
-        $params['GUARD_MESSAGE'] = $guardMessage;
+        if(!is_null($guardResult->statusCode)){
+            $params['errorMessage'] = $guardResult->message;
+            $params['statusCode'] = $guardResult->statusCode;
+            $params['redirect'] = $guardResult->redirectViewCode;
+        }
 
         return self::renderContent($fileName, $params, $localeCode, true);
     }
@@ -653,9 +699,11 @@ class Router{
 
         // If view path not exists, switch to page not found view and set 404 response code
         if($viewPath === false){
-            $viewPath = self::getPageNothFoundPath($localeCode);
-            self::$CurrentFileName = self::$PageNotFoundView;
+            $viewPath = self::getErrorViewPath($localeCode);
+            self::$CurrentFileName = self::$ErrorView;
             // Set page not found response status
+            $params['errorMessage'] = 'Page not found';
+            $params['statusCode'] = 404;
             Response::setStatus(404);
         }
 
@@ -679,73 +727,93 @@ class Router{
     /** Load current layout content
      *  echo $viewContent inside it as a place holder for the current view
      */
-    public static function renderLayout($viewContent = ''){
+    public static function renderLayout($viewContent = '', ?string $layout = null){
         self::$ViewContent = $viewContent;
+        self::$CurrentLayout = $layout;
+        
+        if(is_null($layout)){
+            $content = $viewContent;
+        }else{
+            if(empty($layout)){
+                $layout = self::$DefaultLayout;
+                self::$CurrentLayout = $layout;
+            }
 
-        $layout = (self::$CurrentLayout?? 'main') . '.php';
+            $layoutPath = self::$ViewsDir . 'layouts' . DIRECTORY_SEPARATOR . $layout . '.php';
 
-        include self::$ViewsDir . 'layouts'. DIRECTORY_SEPARATOR . $layout ;
+            if(file_exists($layoutPath)){
+                ob_start();
+                include $layoutPath;
+                $content = ob_get_clean();
+            }else{
+                $content = "Can't find layout file: $layoutPath";
+            }
+        }
+
+        return $content;
     }
 
     /**
      * Check whether or not the current user is allowed to access specified view
      * @param string $routeName View code to check against current user permissions
-     * @return array [$routeName, $guardMessage], if access is allowed $routeName is empty string, otherwise it's redirectFileName/accessDeniedView
+     * @return GuardResult, if access is allowed $routeName is empty string, otherwise it's redirect
      */
-    public static function viewAccessGuard($routeName){
+    public static function viewAccessGuard($routeName): GuardResult {
         $guardResult = Guard::canView($routeName);
-        $isAllowed = $guardResult->isAllowed ?? false;
-        $redirectFileName = $guardResult->redirectFileName ?? '';
-        $guardMessage = $guardResult->message ?? '';
 
-        // Clear old saved url that requires login when navigating to another public url
-        if(empty($redirectFileName)){
-            if(!empty($_SESSION[self::$RedirectViewSession])){
-                unset($_SESSION[self::$RedirectViewSession]);
-            }
-        }else{
-            // Save current url for later use when redirect code is present
-            $_SESSION[self::$RedirectViewSession] = Request::getURI();
+        // Save current url so we can use it later to get back to previous page
+        if(!empty($guardResult->redirectViewCode)){
+            $_SESSION[self::$RedirectViewSession] = Request::getURL();
         }
 
-        // If access allowed for current user then load specified view
-        if ($isAllowed) {
-            return ['', $guardMessage];
-        }
-        
-        // Return redirect view code if presents
-        if (!empty($redirectFileName)) {
-            return [$redirectFileName, $guardMessage];
-        } else {
-            // Set 403 forbidden response status and return access deinied view code
-            Response::setStatus(403);
-            return [self::$AccessDeniedView, $guardMessage];
-        }
+        return $guardResult;
     }
 
     /** 
      * Check whether or not the current user is allowed to execute specified controller method
      * @param string $controller Controller name
      * @param string $method Controller's method name
-     * @return GuradResult true if allowed, false otherwise
+     * @return GuardResult true if allowed, false otherwise
     */
-    public static function controllerExecutionGuard($controller, $method):GuradResult{
+    public static function controllerExecutionGuard($controller, $method):GuardResult{
         return Guard::canExecute($controller, $method, self::$CurrentRouteName);
     }
 
     /**
-     * Get last saved redirect view code
+     * Save current URL and redirect to the specified one
+     * @param string $url Redirect URL
+     */
+    public static function redirect(string $url)
+    {
+        // Save current url for later use when needed
+        $_SESSION[self::$RedirectViewSession] = Request::getURL();
+        header("Location: $url");
+        exit();
+    }
+
+    /**
+     * Get last saved redirect URL
      * @return string Redirect code
     */
-    public static function getRedirectRouteName()
+    public static function getPreviousURL(bool $clear = false)
     {
         $redirect = $_SESSION[self::$RedirectViewSession]?? '';
         
-        if (!empty($redirect)) {
-            unset($_SESSION[self::$RedirectViewSession]);
+        if ($clear) {
+            self::clearPreviousURL();
         }
 
         return $redirect;
+    }
+
+    /**
+     * Clear last saved redirect URL
+     */
+    public static function clearPreviousURL(): void
+    {
+        if(!empty($_SESSION[self::$RedirectViewSession])){
+            unset($_SESSION[self::$RedirectViewSession]);
+        }
     }
 }
 ?>

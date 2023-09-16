@@ -2,9 +2,19 @@
 declare (strict_types = 1);
 
 namespace App\Core;
-use App\Core\Result;
 
 class Response{
+    public $data = null;
+    public int $statusCode = 200;
+    public array $headers = [];
+
+    public function __construct($data, int $statusCode = 200, array $headers = [])
+    {
+        $this->data = $data;
+        $this->statusCode = $statusCode;
+        $this->headers = $headers;
+    }
+
     /**
      * Set response status code
      * @param int $statusCode response status code
@@ -42,18 +52,43 @@ class Response{
     }
 
     /**
-     * Send response to client
-     * @param Result|string $result data object to be sent
+     * Send raw response to client
+     * @param any $data raw data to be sent
      * @param int $statusCode response status code
+     * @param aray $headers response headers to be set
      */
-    public static function send($result, int $statusCode = 200, array $headers = ['Content-Type: application/json']) {
+    public static function sendRaw($data, int $statusCode = 200, array $headers = []) {
         self::setStatus($statusCode);
         self::setHeaders($headers);
         
-        if(!is_null($result)){
-            echo json_encode($result, JSON_THROW_ON_ERROR, 512);
+        if(gettype($data) == 'object'){
+            $data = json_encode($data, JSON_THROW_ON_ERROR, 512);
         }
-    
+
+        echo $data;
+
         exit();
+    }
+
+    /**
+     * Send Respnse object to client
+     * @param Reponse $response object to be sent
+     */
+    public static function send(Response $response) {
+        self::sendRaw($response->data, $response->statusCode, $response->headers);
+    }
+
+    /**
+     * Send json response to client
+     * @param Object $data object to be sent
+     * @param int $statusCode response status code
+     */
+    public static function json($data, int $statusCode = 200, array $headers = []) {
+        $data = json_encode($data, JSON_THROW_ON_ERROR, 512);
+        if(!in_array('Content-Type: application/json', $headers)){
+            $headers[] = 'Content-Type: application/json';
+        }
+
+        self::sendRaw($data, $statusCode, $headers);
     }
 }

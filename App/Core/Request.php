@@ -3,14 +3,15 @@ declare (strict_types = 1);
 namespace App\Core;
 
 use App\Core\File;
+use stdClass;
 
 class Request
 {
     private static array $Locales = ['en'];
     private static array $UploadErrors = [
         '',
-        'The uploaded file exceeds the upload_max_filesize directive in php.ini',
-        'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
+        'The uploaded file exceeded the server configuration for upload max file size',
+        'The uploaded file exceeded the max file size specified in the HTML form',
         'The uploaded file was only partially uploaded',
         'No file was uploaded',
         'Missing a temporary folder',
@@ -20,7 +21,7 @@ class Request
 
     /**
      * Set accepted locale codes
-     * @param array $localeCodes Array of accepted language locale codes the path can use to execlude language locale code from the URI if needed (getURISegments)
+     * @param array $localeCodes Array of accepted language locale codes the path can use to exclude language locale code from the URL if needed (getURLSegments)
      * @return void
      */
     public static function setLocales(array $localeCodes):void{
@@ -32,14 +33,18 @@ class Request
      * @return string Request method (GET, POST,...)
      */
     public static function getMethod():string{
-        return $_SERVER['REQUEST_METHOD'];
+        // This is mainly used for PUT method with multipart/form-data content type where php can't handle submitted data
+        // php can upload by only using post method and when content-type is multipart/form-data
+        // By using Method header we can keep using the put route while we're actually sending a post request
+        $method = self::getHeader('Method', '');
+        return !empty($method)?$method: $_SERVER['REQUEST_METHOD'];
     }
 
     /**
-     * Get current request uri
-     * @return string Request uri
+     * Get current request url
+     * @return string Request url
      */
-    public static function getURI():string{
+    public static function getURL():string{
         return $_SERVER['REQUEST_URI']??'';
     }
 
@@ -47,7 +52,7 @@ class Request
      * @return string current locale code
      */
     public static function getLocaleCode():string{
-        $path = parse_url(self::getURI())['path'];
+        $path = parse_url(self::getURL())['path'];
         $path = trim($path, '/');
         $path = explode('/', $path, 2);
 
@@ -62,7 +67,7 @@ class Request
      * @return string The path part of the current request
      */
     public static function getPath($ignoreLocale = true):string{
-        $path = parse_url(self::getURI())['path'];
+        $path = parse_url(self::getURL())['path'];
         
 
         if($ignoreLocale) {
@@ -80,11 +85,11 @@ class Request
     }
 
     /**
-     * Get request sigments (sigments are uri part separated by uri separator)
-     * @param bool $ignoreLocale don't include locale sigment when true
-     * @return array Array of uri segements
+     * Get request segments (segments are url part separated by url separator)
+     * @param bool $ignoreLocale don't include locale segment when true
+     * @return array Array of url segments
      */
-    public static function getURISegments($ignoreLocale = true):array
+    public static function getURLSegments($ignoreLocale = true):array
     {
         $path = self::getPath($ignoreLocale);
         $path = trim($path, '/');
@@ -99,6 +104,17 @@ class Request
     public static function getQueryParams():array
     {
         return $_GET;
+    }
+
+    /**
+     * Get specified query variable value
+     * @param string $key Query variable variable name
+     * @param ?string $default Default value if variable name not found
+     * @return string Value of specified query variable or default if key not found
+     */
+    public static function query(string $key, $default = null)
+    {
+        return $_GET[$key]??$default;
     }
 
     /**
@@ -123,11 +139,11 @@ class Request
      * @param string header key
      * @return string header value
      */
-    public static function getHeader($str):string
+    public static function getHeader(string $str, string $default = ''):string
     {
         $headers = self::getAllHeaders();
 
-        return $headers[$str]??'';
+        return $headers[$str]??$default;
     }
 
     /**
@@ -142,14 +158,19 @@ class Request
             return $cache;
         }
         
+        $data = file_get_contents('php://input');
+        
         $isJSONContent = strtolower(getallheaders()['Content-Type']??'') == 'application/json';
-
+        
         if($isJSONContent){
-            $data = json_decode(file_get_contents('php://input'), true);
+            $data = json_decode($data, true);
+
             // Make sure input stream is successfully decoded
             if(!is_null($data)){
                 $_POST = $data;
             }
+        }elseif(!empty($data)){ // input stream will be empty for multipart/form-data using PUT method
+            mb_parse_str($data, $_POST);
         }
         
         $cache = $_POST;
@@ -158,16 +179,14 @@ class Request
     }
 
     private static function checkFile(string $inputName = ''):string {
-        $error = '';
-
-        // Early check for upload_max_filesize limit violattion ($_FILES is empty but CONTENT_LENGTH > 0)
+        // Early check for upload_max_filesize limit violation ($_FILES is empty but CONTENT_LENGTH > 0)
 		if(empty($_FILES) && $_SERVER['CONTENT_LENGTH'] > 0){
 			if($_SERVER['CONTENT_LENGTH'] > File::getSizeInBytes(ini_get('upload_max_filesize'))){
 				return 'File size exceeds upload limits';
 			}
 		}
 
-        // When POST is Empty this is an indecation exceeding the upload_max_filesize
+        // When POST is Empty this is an indication exceeding the upload_max_filesize
         if(empty($_POST)){
             return 'File size exceeds upload limits';
         }
@@ -175,7 +194,7 @@ class Request
         return '';
     }
 
-    public static function file(string $inputName = ''):File {
+    public static function file(string $inputName = ''):?File {
         if($error = self::checkFile($inputName)){
             return new File('', '', '', $error);
         }
@@ -183,7 +202,7 @@ class Request
         $file = $_FILES[$inputName]??null;
     
         if(empty($file)){
-            return new File('', '', '', 'File not recognized');
+            return null;
         }
 
         // Get first file if multiple ones are uploaded
@@ -212,7 +231,7 @@ class Request
         $files = $_FILES[$inputName]??null;
 
         if(empty($files)){
-            return [new File('', '', '', 'File not recognized')];
+            return [];
         }
 
         // If one file only is uploaded convert it to a multiple-like upload
@@ -223,40 +242,50 @@ class Request
         }
 
         for($i = 0; $i < count($files['name']); $i++){
-            if(!is_uploaded_file($files['tmp_name'][$i])){
-                $arrFiles[] = new File('', '', '', 'File not recognized');
-            }
-
-            $arrFiles[] = new File($files['name'][$i], $files['type'][$i], $files['tmp_name'][$i], self::$UploadErrors[$files['error'][$i]], $files['size'][$i]);  
+            $arrFiles[] = new File($files['name'][$i], $files['type'][$i], $files['tmp_name'][$i], self::$UploadErrors[$files['error'][$i]], $files['size'][$i]);
         }
     
         return $arrFiles;
-   
     }
 
-    public static function isFileSubmitted(string $inputName = ''): bool {
+    public static function isFileSubmitted(string $inputName = ''): stdClass {
+        $status = new stdClass();
+        $status->success = 0;
+        $status->fail = 0;
+        $status->errors = [];
+
         if(empty($inputName)){
-            return false;
+            return $status;
         }
         
         // If file not selected in the input field it will be included as POST var not as file var
         if(array_key_exists($inputName, self::body())){
-            return false;
+            return $status;
         }
         
-        // in case of a singl file upload will get an array of one item
+        // in case of a single file upload will get an array of one item
         $files = self::files($inputName);
 
         if(empty($files)){
-            return false;
+            return $status;
         }
 
         // Make sure at least one file is successfully uploaded
-        $okFiles = array_filter($files, function(File $file){
+        $status->success = count(array_filter($files, function(File $file){
             return empty($file->error) && $file->size > 0;
+        }));
+
+        $failFiles = array_filter($files, function(File $file){
+            return !empty($file->error);
         });
 
-        return count($okFiles) > 0;
+        $status->fail = count($failFiles);
+
+        $status->errors = array_map(function($file){
+            return $file->name . ': ' . $file->error;
+        }, $failFiles);
+
+        return  $status;
     }
 
     public static function uploadFile(string $inputFieldName, string $uploadDir, string $fileName = '', string $extension = '', array $acceptedMimeTypes = [], bool $makeDir = false): File{
@@ -276,7 +305,7 @@ class Request
         return $arrFiles;
     }
 
-    private static function upload(File $file, string $uploadDir, string $fileName = '', string $extension = '', array $acceptedMimeTypes = [], bool $makeDir = false): File {
+    private static function upload(File $file, string $uploadDir, string $distFileName = '', string $extension = '', array $acceptedMimeTypes = [], bool $makeDir = false): File {
         if($file->error){
             return $file;
         }
@@ -285,7 +314,7 @@ class Request
         if(!empty($acceptedMimeTypes)){
             // Check for mimes like image/*, audio/*, ...
             $result = array_filter($acceptedMimeTypes, function($item)use($file){
-                return ($file->type == $item || explode('/', $file->type)[0] .'/*' == $item);
+                return ($file->mimeType == $item || explode('/', $file->mimeType)[0] .'/*' == $item);
             });
 
             if(empty($result)){
@@ -294,19 +323,16 @@ class Request
             }
         }
 
-        if(empty($fileName)){
-            $fileName = $file->name;
+        if(empty($distFileName)){
+            $distFileName = $file->name;
         }
 
         if(empty($extension)){
-            // Get extenstion from the original file name
+            // Get extension from the original file name
             $extension = '.' . File::getExtension($file->name);
         }else{
             $extension = '.' . str_replace('.', '', $extension);
         }
-
-        // Replace original file name with the new one 
-        $file->name = $fileName . $extension;
 
         // Create necessary directory for uploaded file
         if(!is_dir($uploadDir)){
@@ -319,7 +345,7 @@ class Request
             }
         }
         
-        $file->path = $uploadDir . $file->name;
+        $file->path = $uploadDir . $distFileName . $extension;
 
         // Move uploaded photo
         if(!move_uploaded_file($file->tmpName, $file->path)){
@@ -327,5 +353,23 @@ class Request
         }
 
         return $file;
+    }
+
+    public static function isAjax(): bool
+    {
+        return self::getHeader('X-Requested-With') == 'XMLHttpRequest';
+    }
+
+    public static function accept($mimeType = '', $acceptAny = false): bool
+    {
+        $acceptHeaders = self::getHeader('Accept', '');
+        $acceptHeaders = str_replace(';', ',', $acceptHeaders);
+        $acceptHeaders = explode(',', $acceptHeaders);
+
+        if($acceptAny && in_array('*/*', $acceptHeaders)) {
+            return true;
+        }
+        
+        return in_array($mimeType, $acceptHeaders);
     }
 }

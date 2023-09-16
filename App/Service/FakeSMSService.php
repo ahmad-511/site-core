@@ -15,13 +15,13 @@ class FakeSMSService extends Service implements SMSServiceInterface
         return '+9988776655';
     }
 
-    public static function Send($recipeintNumber, $message):Result
+    public static function Send($recipientNumber, $message):Result
     {
         // E.164 Number format is required
-        $recipeintNumber = str_replace([' ', '+', '-', '(', ')'] , '', ltrim($recipeintNumber, '0'));
+        $recipientNumber = str_replace([' ', '+', '-', '(', ')'] , '', ltrim($recipientNumber, '0'));
 
         return new Result(
-            $recipeintNumber,
+            $recipientNumber,
             'Message sent successfully',
             'success'
         );

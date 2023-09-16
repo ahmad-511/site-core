@@ -10,6 +10,7 @@ use App\Core\Router;
 use App\Core\Template;
 use App\Core\Captcha;
 use App\Core\DB;
+use App\Core\Localizer as L;
 use App\Core\Logger;
 use App\Core\Path;
 use App\Core\Request;
@@ -26,6 +27,10 @@ DB::setDNS(DB_HOST, DB_NAME);
 DB::setUser(DB_USER, DB_PASSWORD);
 DB::setTimezone(DEFAULT_TIMEZONE);
 
+L::setDictionaryDir(BASE_DIR . '/dics/');
+L::setDefaultLanguage(DEFAULT_LANGUAGE);
+L::setDefaultLanguage(ALT_LANGUAGE);
+
 Router::setAutoRouting(false);
 Router::setHomePageCode('home');
 Router::setLocales(ACCEPTED_LOCALES);
@@ -36,9 +41,8 @@ Router::setLocaleMapper([
 ]);
 
 Router::setViewsDir(BASE_DIR .'/views/');
-Router::setAccessDeniedView('access-denied');
-Router::setPageNotFoundView('page-not-found');
-Router::setLayout('main');
+Router::setErrorView('error');
+Router::setDefaultLayout('main');
 Router::setCaseSensitivity(false);
 // Include custom routes
 require_once BASE_DIR . '/../custom-routes.php';
@@ -60,20 +64,20 @@ Template::setGeneralParams([
         'LINKEDIN_ID' => LINKEDIN_ID,
     ],
     'en' => [
-        'WEBSITE_TITLE' => App::loc(WEBSITE_TITLE, 'en'),
-        'WEBSITE_SLOGAN' =>  App::loc(WEBSITE_SLOGAN, 'en'),
-        'COMPANY_ADDRESS' =>  App::loc(COMPANY_ADDRESS, 'en'),
+        'WEBSITE_TITLE' => L::loc(WEBSITE_TITLE, 'en'),
+        'WEBSITE_SLOGAN' =>  L::loc(WEBSITE_SLOGAN, 'en'),
+        'COMPANY_ADDRESS' =>  L::loc(COMPANY_ADDRESS, 'en'),
         'UNSUBSCRIBE_URL' => WEBSITE_URL . '/EN/Unsubscribe',
     ],
     'ar' => [
-        'WEBSITE_TITLE' => App::loc(WEBSITE_TITLE, 'ar'),
-        'WEBSITE_SLOGAN' =>  App::loc(WEBSITE_SLOGAN, 'ar'),
-        'COMPANY_ADDRESS' =>  App::loc(COMPANY_ADDRESS, 'ar'),
+        'WEBSITE_TITLE' => L::loc(WEBSITE_TITLE, 'ar'),
+        'WEBSITE_SLOGAN' =>  L::loc(WEBSITE_SLOGAN, 'ar'),
+        'COMPANY_ADDRESS' =>  L::loc(COMPANY_ADDRESS, 'ar'),
         'UNSUBSCRIBE_URL' => WEBSITE_URL . '/AR/Unsubscribe',
     ]
 ]);
 
-Captcha::$Font = __DIR__ . '/../../fonts/DroidSerifBold.ttf';
+Captcha::$Font = realpath(__DIR__ . '/../../fonts/DroidSerifBold.ttf');
 
 MailService::SetMaxBatchSize(MAILER_MAX_BATCH_SIZE);
 MailService::SetSendRate(MAILER_SEND_RATE);
@@ -90,7 +94,7 @@ MailService::SetProviderDefault([
 
 // SMSService::SetSMSClient(new FakeSMSService);
 
-Logger::setLogPath(__DIR__ .'/../logs/');
+Logger::setLogPath(realpath(__DIR__ .'/../logs/'));
 
 //Mailer::setDebugMode(MAILER_DEBUG_MODE);
 

@@ -31,13 +31,13 @@ export default class Prompt {
         this.actions = actions;
         this.events = new EventEmitter();
 
-        const dvContainer = document.createElement('div');
+        const dvContainer = document.createElement('aside');
         const frmPrompt = document.createElement('form');
         const btnClose = document.createElement('span');
         const dvDescription = document.createElement('div');
         const dvActionBar = buildActionButtons(actions);
 
-        dvContainer.className = 'prompt-container';
+        dvContainer.className = 'prompt-modal';
         frmPrompt.className = 'prompt-form';
         btnClose.className = 'prompt-close';
         dvDescription.className = 'prompt-description';
@@ -71,7 +71,7 @@ export default class Prompt {
         dvActionBar.addEventListener('click', e => {
             if (e.target instanceof HTMLButtonElement) {
                 const action = this.actions.find(action => action.name == e.target.name);
-                this.events.emit('Action', action);
+                this.events.emit('action', action, frmPrompt);
 
                 setTimeout(() => {
                     this.close(e.target.name);
@@ -86,6 +86,10 @@ export default class Prompt {
 
         this.container = dvContainer;
         this.prompt = frmPrompt;
+    }
+
+    listen(event, callback){
+        this.events.listen(event, callback);
     }
 
     setActionData(actionName, data) {
@@ -108,6 +112,6 @@ export default class Prompt {
     close(action) {
         this.container.remove();
         document.body.style.overflow = 'auto';
-        this.events.emit('Close', action || '');
+        this.events.emit('close', action || '');
     }
 }

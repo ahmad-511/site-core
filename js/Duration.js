@@ -20,7 +20,7 @@ export default class Duration {
         }
 
         if (!(components instanceof Array)) {
-            console.log('Array of type Compenent is expected in components argument');
+            console.log('Array of type Component is expected in components argument');
         }
 
         if ((components instanceof Array) && components.length && !(components[0] instanceof Component)) {
@@ -36,6 +36,10 @@ export default class Duration {
         this.events = new EventEmitter();
 
         this.render();
+    }
+
+    listen(event, callback){
+        this.events.listen(event, callback);
     }
 
     render() {

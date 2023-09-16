@@ -78,9 +78,22 @@ use App\Service\SMSService;
 // print_r(ReleanSMSService::Send('201227662354', 'وصلك شي ابن عمي , أنا عبد الله'));
 // print_r(SMSService::Send('201020663902', 'Hello from KhednyM3ak'));
 // print_r(SMSService::Send('123456', 'Hello from KhednyM3ak'));
-print_r(FakeSMSService::Send('201227662354', 'Hello from KhednyM3ak'));
+// print_r(FakeSMSService::Send('201227662354', 'Hello from KhednyM3ak'));
 
-echo '</pre>';
+// echo '</pre>';
 // ( [data] => 1 [message] => Your message was sent ! [messageType] => success [redirect] => [metaData] => Array ( [type] => success [msg] => Your message was sent ! [data] => Array ( [smsid] => 53928896 [sent] => 1 [failed] => 0 [reciver] => 201227662354 ) ) )
 // SMSEgyptService [{"type":"success","msg":"Your message was sent !","data":{"smsid":"53928863","sent":1,"failed":0,"reciver":"201227662354"}}]
 ?>
+
+<script type="module">
+    import xhr from './js/xhr.js'
+
+    xhr({
+        method: 'PUT',
+        url: '/put',
+        body: {a:1, b:2},
+        callback(data, status){
+            console.log(data, status)
+        }
+    }) 
+</script>

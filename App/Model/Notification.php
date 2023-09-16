@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace App\Model;
 
 use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Model;
 use App\Core\Result;
 use Exception;
@@ -81,7 +82,7 @@ class Notification extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'notifications']),
+                L::loc('Failed to read {object}', '', ['object' => 'notifications']),
                 'error'
             );
         }
@@ -167,7 +168,7 @@ class Notification extends Model {
         if ($rowsets === false) {
             return new Result(
                 null,
-                App::loc('Failed to count {object}', '', ['object' => 'notifications']),
+                L::loc('Failed to count {object}', '', ['object' => 'notifications']),
                 'error'
             );
         }

@@ -1,76 +1,103 @@
-import { $$ } from "/App/js/main.js";
-import EventEmitter from "/App/js/EventEmitter.js";
+import { $$ } from "/js/main.js"
+import EventEmitter from "/js/EventEmitter.js"
 
 export default class StarRating {
-    constructor(container, name, max = 5, value = 0, star = '☆', checkedStar = '★') {
+    constructor(container, valueField, max = 5, value = 0, star = '☆', checkedStar = '★') {
         if (!(container instanceof HTMLElement)) {
-            console.log('HTMLElement is expected in container argument');
+            console.log('HTMLElement is expected in container argument')
         }
 
-        this.container = container;
-        this.name = name;
-        this.max = max;
-        this.value = value;
-        this.star = star;
-        this.checkedStar = checkedStar;
-        this.starsContainer = null;
-        this.freezed = false;
-        this.events = new EventEmitter();
+        this.container = container
 
-        this.render();
+        if (valueField){
+            if (!(valueField instanceof HTMLInputElement)) {
+                console.log('HTMLInputElement required')
+            }
+        }else{
+            valueField = null
+        }
+
+        this.valueField = valueField
+        this.max = max
+        this.value = value
+        this.star = star
+        this.checkedStar = checkedStar
+        this.starsContainer = null
+        this.freezed = false
+        this.events = new EventEmitter()
+        this.render()
+    }
+
+    listen(event, callback){
+        this.events.listen(event, callback)
     }
 
     render() {
-        this.starsContainer = this.container.appendChild(document.createElement('p'));
-        this.starsContainer.className = 'stars-container';
+        this.starsContainer = this.container.appendChild(document.createElement('p'))
+        this.starsContainer.className = 'stars-container'
 
         for (let i = 0; i < this.max; i++) {
-            const s = document.createElement('span');
-            s.innerHTML = this.star;
-            s.className = 'star';
-            s.dataset.value = i + 1;
+            const s = document.createElement('span')
+            s.innerHTML = this.star
+            s.className = 'star'
+            s.dataset.value = i + 1
 
-            this.starsContainer.appendChild(s);
+            this.starsContainer.appendChild(s)
         }
 
-        this.setValue(this.value);
+        this.setValue(this.value)
 
         this.starsContainer.addEventListener('click', e => {
             if (this.freezed) {
-                return;
+                return
             }
 
-            const elem = e.target;
-            const star = elem.closest('span.star');
+            const elem = e.target
+            const star = elem.closest('span.star')
 
             if (!star) {
-                return;
+                return
             }
 
-            this.setValue(star.dataset.value);
-        });
+            let value = star.dataset.value
+
+            // Clear value if the same star clicked twice
+            if(this.value == value){
+                value = 0
+            }
+
+            this.setValue(value)
+        })
     }
 
     setValue(value) {
-        this.value = value;
+        this.value = value
 
-        const stars = $$('.star', this.starsContainer);
+        if(this.valueField){
+            this.valueField.value = value
+        }
+
+        const stars = $$('.star', this.starsContainer)
         stars.forEach(star => {
-            star.innerHTML = this.star;
-            star.className = 'star';
+            star.innerHTML = this.star
+            star.className = 'star'
 
             if (value >= star.dataset.value) {
                 star.innerHTML = this.checkedStar
-                star.classList.add('checked');
+                star.classList.add('checked')
             }
         });
 
-        this.events.emit('change', this.name, this.value)
+        this.events.emit('change', this.value)
     }
 
-    freez(isFreezed = true) {
-        this.freezed = isFreezed;
-        this.starsContainer.classList.toggle('freezed', isFreezed);
+    getValue(){
+        return this.valueField.value
+    }
+
+    freeze(isFreezed = true) {
+        this.freezed = isFreezed
+        this.starsContainer.classList.toggle('freezed', isFreezed)
     }
 
 }
