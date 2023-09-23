@@ -1,20 +1,20 @@
 <?php
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Router;
 ?>
 
 <section class="verification-result">
-    <h2><?= App::loc('Mobile number verification')?></h2>
+    <h2><?= L::loc('Mobile number verification')?></h2>
     <div>
         <form id="frmVerifyMobile" class="verify-my-mobile-form" novalidate>
             <div class="control-group">
-                <label for="verification_code"><?= App::loc('Verification code')?></label>
+                <label for="verification_code"><?= L::loc('Verification code')?></label>
                 <span class="validity verification_code"></span>
                 <div class="control-component">
                     <input type="text" id="verification_code" required>
-                    <button type="submit" id="btnSubmit" class="btn btn-yellow"><?= App::loc('Verify')?></button>
+                    <button type="submit" id="btnSubmit" class="btn btn-yellow"><?= L::loc('Verify')?></button>
                 </div>
-                <p class="hint"><?= App::loc('Sent via SMS to your mobile number')?></p>
+                <p class="hint"><?= L::loc('Sent via SMS to your mobile number')?></p>
             </div>
         </form>
     </div>
@@ -33,7 +33,7 @@ use App\Core\Router;
     $('#frmVerifyMobile').addEventListener('submit', operationHandler);
 
      // Setup validator
-     validator.add($('#verification_code'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.verification-code'));
+     validator.add($('#verification_code'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.verification-code'));
  
     // Handle CRUD operations
     function operationHandler(e) {
@@ -48,7 +48,7 @@ use App\Core\Router;
                 validator.clear();
 
                 if(!validator.validate()){
-                    showMessage('<?= App::loc('Some data are missing or invalid')?>', 'warning');
+                    showMessage('<?= L::loc('Some data are missing or invalid')?>', 'warning');
                     return;
                 }
 

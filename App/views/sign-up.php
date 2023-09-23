@@ -1,22 +1,22 @@
 <?php
-    use App\Core\App;
-use App\Core\Router;
+    use App\Core\Localizer as L;
+    use App\Core\Router;
 
 ?>
 
 <section class="center-center">
     <form id="frmSignup" class="container signup-form signup" novalidate>
-        <h2><?= App::loc('Sign up to get benefit')?></h2>
+        <h2><?= L::loc('Sign up to get benefit')?></h2>
        
         <div class="control-set">
             <div class="control-group">
                 <p>
-                    <label for="gender"><?= App::loc('Gender')?></label>
+                    <label for="gender"><?= L::loc('Gender')?></label>
                     <span class="validity gender"></span>
                 </p>
                 <select id="gender" required autofocus>
-                    <option value="M"><?= App::loc('M')?></option>
-                    <option value="F"><?= App::loc('F')?></option>
+                    <option value="M"><?= L::loc('M')?></option>
+                    <option value="F"><?= L::loc('F')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -25,16 +25,16 @@ use App\Core\Router;
                 <p>&nbsp;</p>
                 <p>
                     <input type="checkbox" id="hidden_personality" value="0">
-                    <label for="hidden_personality"><?= App::loc('Show my profile to females only')?></label>
+                    <label for="hidden_personality"><?= L::loc('Show my profile to females only')?></label>
                 </p>
-                <p class="hint"><?= App::loc('You can change this later')?></p>
+                <p class="hint"><?= L::loc('You can change this later')?></p>
             </div>
         </div>
 
         <div class="control-set">
             <div class="control-group">
                 <p>
-                    <label for="name"><?= App::loc('Name')?></label>
+                    <label for="name"><?= L::loc('Name')?></label>
                     <span class="validity name"></span>
                 </p>
                 <input type="text" id="name" pattern="[a-zA-Z ء-ي]{3,25}" required>
@@ -43,7 +43,7 @@ use App\Core\Router;
 
             <div class="control-group">
                 <p>
-                    <label for="surname"><?= App::loc('Surname')?></label>
+                    <label for="surname"><?= L::loc('Surname')?></label>
                     <span class="validity surname"></span>
                 </p>
                 <input type="text" id="surname" pattern="[a-zA-Z ء-ي]{3,25}" required>
@@ -54,7 +54,7 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group">
                 <p>
-                    <label for="country"><?= App::loc('Country')?></label>
+                    <label for="country"><?= L::loc('Country')?></label>
                     <span class="validity country"></span>
                 </p>
                 <select id="country" pattern="[A-Z]{2}" required></select>
@@ -63,26 +63,21 @@ use App\Core\Router;
 
             <div class="control-group">
                 <p>
-                    <label for="mobile"><?= App::loc('Mobile')?></label>
+                    <label for="mobile"><?= L::loc('Mobile')?></label>
                     <span class="validity mobile"></span>
                 </p>
                 <div class="mobile-number-container">
                     <span id="dialingCode" class="dialing-code" dir="ltr">+000</span>
                     <input type="tel" id="mobile" pattern="" required>
                 </div>
-                <p class="hint">
-                    <?= App::loc(MOBILE_VERIFICATION_MODE == 'Send'?'Verification code will be sent to your mobile': 'You have to send an SMS from this number')?>
-                    <?php if(MOBILE_VERIFICATION_MODE == 'Receive'):?>,
-                        <a href="<?= Router::routeUrl('how-it-works-section-view', ['section' => 'Mobile-Verification'])?>" target="_blank"><?= App::loc('Why?')?></a>
-                    <?php endif?>
-                </p>
+                <p class="hint">&nbsp;</p>
             </div>
         </div>
 
         <div class="control-set">
             <div class="control-group">
                 <p>
-                    <label for="email"><?= App::loc('Email')?></label>
+                    <label for="email"><?= L::loc('Email')?></label>
                     <span class="validity email"></span>
                 </p>
                 <input type="email" id="email" required>
@@ -91,11 +86,11 @@ use App\Core\Router;
 
             <div class="control-group">
                 <p>
-                    <label for="password"><?= App::loc('Password')?></label>
+                    <label for="password"><?= L::loc('Password')?></label>
                     <span class="validity password"></span>
                 </p>
                 <input type="password" id="password" minlength="6" required>
-                <p class="hint"><?= App::loc('6 Characters minimum')?></p>
+                <p class="hint"><?= L::loc('6 Characters minimum')?></p>
             </div>
         </div>
 
@@ -104,23 +99,23 @@ use App\Core\Router;
 
             </div>
             <div class="control-group personal-photo">
-                <label for="personal_photo"><?= App::loc('Personal photo')?></label>
+                <label for="personal_photo"><?= L::loc('Personal photo')?></label>
                 <input type="file" id="personal_photo">
                 <img src="/App/img/user.png" id="imgPersonalPhoto">
-                <p class="hint"><?= App::loc('Clear photo of your face')?></p>
+                <p class="hint"><?= L::loc('Clear photo of your face')?></p>
             </div>
         </div>
 
         <div class="toggle-car-registration">
             <input type="checkbox" id="chkCarRegistration">
-            <label for="chkCarRegistration"><?= App::loc('Register your car now')?></label>
+            <label for="chkCarRegistration"><?= L::loc('Register your car now')?></label>
         </div>
 
         <div id="carRegistration" class="car-registration hidden">
             <div class="control-set">
                 <div class="control-group">
                     <p>
-                        <label for="plate_number"><?= App::loc('Plate number')?></label>
+                        <label for="plate_number"><?= L::loc('Plate number')?></label>
                         <span class="validity plate_number"></span>
                     </p>
                     <div class="plate-number-bakcground" id="plateNumberBackground">
@@ -132,18 +127,18 @@ use App\Core\Router;
 
                 <div class="control-group">
                     <p>
-                        <label for="maker"><?= App::loc('Maker')?></label>
+                        <label for="maker"><?= L::loc('Maker')?></label>
                         <span class="validity maker"></span>
                     </p>
                     <select id="maker" pattern="\d+" required></select>
-                    <p class="hint"><a href="<?= Router::routeUrl('contact-us-view')?>"><?= App::loc('Please inform us in case you could not find your car maker')?></a></p>
+                    <p class="hint"><a href="<?= Router::route('contact-us-view')?>"><?= L::loc('Please inform us in case you could not find your car maker')?></a></p>
                 </div>
             </div>
 
             <div class="control-set">
                 <div class="control-group">
                     <p>
-                        <label for="model"><?= App::loc('Model')?></label>
+                        <label for="model"><?= L::loc('Model')?></label>
                         <span class="validity model"></span>
                     </p>
                     <input type="text" id="model" required>
@@ -152,7 +147,7 @@ use App\Core\Router;
 
                 <div class="control-group">
                     <p>
-                        <label for="color"><?= App::loc('Color')?></label>
+                        <label for="color"><?= L::loc('Color')?></label>
                         <span class="validity color"></span>
                     </p>
                     <input type="text" id="color" minlength="3" required>
@@ -163,41 +158,41 @@ use App\Core\Router;
             <div class="control-set">
                 <div class="control-group">
                     <p>
-                        <label for="seats_number"><?= App::loc('Seats')?></label>
+                        <label for="seats_number"><?= L::loc('Seats')?></label>
                         <span class="validity seats_number"></span>
                     </p>
                     <input type="number" id="seats_number" value="1" min="1" max="5">
-                    <p class="hint"><?= App::loc('Number of seats allowed for passengers')?></p>
+                    <p class="hint"><?= L::loc('Number of seats allowed for passengers')?></p>
                 </div>
 
                 <div class="control-group car-photo">
-                    <label for="car_photo"><?= App::loc('Car photo')?></label>
+                    <label for="car_photo"><?= L::loc('Car photo')?></label>
                     <input type="file" id="car_photo">
                     <img src="/App/img/car.png" id="imgCarPhoto">
-                    <p class="hint"><?= App::loc('Clear front photo of car')?></p>
+                    <p class="hint"><?= L::loc('Clear front photo of car')?></p>
                 </div>
             </div>
         </div>
 
         <div class="sign-up-agreement">
-            <h3><?= App::loc('I agree to commit')?></h3>
+            <h3><?= L::loc('I agree to commit')?></h3>
             <p>
                 <input type="checkbox" id="chkTOSPP">
-                <label for="chkTOSPP"><?= App::loc('To {TOS} and {PP}', '', [
-                    'TOS' => '<a target="_blank" href="'. Router::routeUrl('terms-of-service-view').'">'. App::loc('Terms of service').'</a>',
-                    'PP' => '<a target="_blank" href="'. Router::routeUrl('privacy-policy-view').'">'. App::loc('Privacy policy').'</a>'
+                <label for="chkTOSPP"><?= L::loc('To {TOS} and {PP}', '', [
+                    'TOS' => '<a target="_blank" href="'. Router::route('terms-of-service-view').'">'. L::loc('Terms of service').'</a>',
+                    'PP' => '<a target="_blank" href="'. Router::route('privacy-policy-view').'">'. L::loc('Privacy policy').'</a>'
                 ])?></label>
             </p>
             <p>
                 <input type="checkbox" id="chkHow">
-                <label for="chkHow"><?= App::loc('To what mentioned in {how}', '', [
-                    'how' => '<a target="_blank" href="'. Router::routeUrl('how-it-works-view').'">'. App::loc('How it works').'</a>',
+                <label for="chkHow"><?= L::loc('To what mentioned in {how}', '', [
+                    'how' => '<a target="_blank" href="'. Router::route('how-it-works-view').'">'. L::loc('How it works').'</a>',
                 ])?></label>
             </p>
         </div>
         <div class="form-operations">
-            <button type="submit" class="btn btn-submit" id="btnSubmit" disabled><?=App::loc('Sign up')?></button>
-            <button type="button" class="btn" id="btnCancel"><?=App::loc('Cancel')?></button>
+            <button type="submit" class="btn btn-submit" id="btnSubmit" disabled><?=L::loc('Sign up')?></button>
+            <button type="button" class="btn" id="btnCancel"><?=L::loc('Cancel')?></button>
         </div>
     </form>
 </section>
@@ -223,14 +218,14 @@ use App\Core\Router;
         btnSubmit.disabled = !($('#chkTOSPP').checked && $('#chkHow').checked);
     }
     // Setup validator
-    validator.add($('#name'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.name'));
-    validator.add($('#surname'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.surname'));
-    validator.add($('#country'), '<?= App::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.country'));
-    validator.add($('#mobile'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.mobile'));
-    validator.add($('#email'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.email'));
-    validator.add($('#password'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''], 1)?>', $('.validity.password'));
+    validator.add($('#name'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.name'));
+    validator.add($('#surname'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.surname'));
+    validator.add($('#country'), '<?= L::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.country'));
+    validator.add($('#mobile'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.mobile'));
+    validator.add($('#email'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.email'));
+    validator.add($('#password'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''], 1)?>', $('.validity.password'));
     
-    validator.add($('#plate_number'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.plate_number'), elem => {
+    validator.add($('#plate_number'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.plate_number'), elem => {
         if(elem.dataset.multiPattern){
             const pn1 = elem.value;
             const pn2 = $('#plate_number2').value;
@@ -248,10 +243,10 @@ use App\Core\Router;
 
         return true;
     });
-    validator.add($('#plate_number2'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.plate_number'));
-    validator.add($('#maker'), '<?= App::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.maker'));
-    validator.add($('#model'), '<?= App::loc('{field} is required', '', ['field' => ''])?>', $('.validity.model'));
-    validator.add($('#color'), '<?= App::loc('{field} is required', '', ['field' => ''])?>', $('.validity.color'));
+    validator.add($('#plate_number2'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.plate_number'));
+    validator.add($('#maker'), '<?= L::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.maker'));
+    validator.add($('#model'), '<?= L::loc('{field} is required', '', ['field' => ''])?>', $('.validity.model'));
+    validator.add($('#color'), '<?= L::loc('{field} is required', '', ['field' => ''])?>', $('.validity.color'));
 
     // Load country list
     xhr({
@@ -388,7 +383,7 @@ use App\Core\Router;
 
         switch (btnId) {
             case 'btnCancel':
-                document.location.href = '<?= Router::routeUrl('home-view')?>';
+                document.location.href = '<?= Router::route('home-view')?>';
                 break;
 
             case 'frmSignup':
@@ -397,7 +392,7 @@ use App\Core\Router;
                 const carRules = [$('#plate_number'), $('#plate_number2'), $('#maker'), $('#model'), $('#color')];
 
                 if(!validator.validate($('#chkCarRegistration').checked?null: carRules)){
-                    showMessage('<?= App::loc('Some data are missing or invalid')?>', 'warning');
+                    showMessage('<?= L::loc('Some data are missing or invalid')?>', 'warning');
                     return;
                 }
 

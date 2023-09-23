@@ -1,7 +1,7 @@
 <?php
     declare (strict_types = 1);
 
-    use App\Core\App;
+    use App\Core\Localizer as L;
     use App\Core\Auth;
     use App\Core\Router;
 ?>
@@ -13,18 +13,18 @@
             <div class="account-data">
                 <h2><?= $params['name'], ' ', $params['surname']?></h2>
                 
-                <label><?= App::loc('Country')?></label>
+                <label><?= L::loc('Country')?></label>
                 <span><?= $params['country']?></span>
             
-                <label><?= App::loc('Language')?></label>
-                <span><?= App::loc($params['preferred_language'])?></span>
+                <label><?= L::loc('Language')?></label>
+                <span><?= L::loc($params['preferred_language'])?></span>
             
-                <label><?= App::loc('Status')?></label>
-                <span><?= App::loc($params['account_status'])?> <i class="tag tag-<?= strtolower($params['account_status'])?>"></i></span>
+                <label><?= L::loc('Status')?></label>
+                <span><?= L::loc($params['account_status'])?> <i class="tag tag-<?= strtolower($params['account_status'])?>"></i></span>
                 
                 <div class="star-rating-container">
                     <p>
-                        <label><?= App::loc('Ratings count')?></label>    
+                        <label><?= L::loc('Ratings count')?></label>    
                         <span><?= $params['ratings_count']?></span>
                     </p>
                     <p>
@@ -38,13 +38,13 @@
         <?php if(Auth::getUser('account_type') == 'Admin'):?>
             <?php if(!empty($params['admin_notes'])):?>
                 <p class="admin-notes">
-                    <label><?= App::loc('Admin notes')?></label><br>
+                    <label><?= L::loc('Admin notes')?></label><br>
                     <?= $params['admin_notes']?>
                 </p>
             <?php endif?>
             <?php if(!empty($params['remarks'])):?>
                 <p class="remarks">
-                    <label><?= App::loc('Remarks')?></label><br>
+                    <label><?= L::loc('Remarks')?></label><br>
                     <?= $params['remarks']?>
                 </p>
             <?php endif?>
@@ -53,7 +53,7 @@
 
     <?php if(!empty($params['rating_details'])):?>
     <section class="container rating-details">
-        <h2><?= App::loc('Rating details')?></h2>
+        <h2><?= L::loc('Rating details')?></h2>
 
         <ul>
         <?php foreach($params['rating_details'] as $r):?>
@@ -69,7 +69,7 @@
 
     <?php if(!empty($params['latest_ratings'])):?>
     <section class="container latest-ratings">
-        <h2><?= App::loc('Latest received ratings')?></h2>
+        <h2><?= L::loc('Latest received ratings')?></h2>
 
         <?php foreach($params['latest_ratings'] as $item):?>
             <div class="rating-item">
@@ -94,7 +94,7 @@
         <?php endforeach?>
 
         <p class="more-links">
-            <a target="_blank" href="<?= Router::routeUrl('account-ratings-view', ['account_id' => $params['account_id']]) ?>">■ <?= App::loc('View full ratings list')?></a>
+            <a target="_blank" href="<?= Router::route('account-ratings-view', ['account_id' => $params['account_id']]) ?>">■ <?= L::loc('View full ratings list')?></a>
         </p>
     </section>  
     <?php endif?>

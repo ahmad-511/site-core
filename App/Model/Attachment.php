@@ -4,27 +4,12 @@ declare (strict_types = 1);
 namespace App\Model;
 
 use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Model;
 use App\Core\Result;
 use Exception;
 
 class Attachment extends Model {
-
-    public function isReferenced(array $params = []):Result{
-        // No refrences for accounts yet
-        try{
-            return new Result(
-                []
-            );
-
-        }catch(Exception $ex){
-            return new Result(
-                null,
-                $ex->getMessage(),
-                'db_error'
-            );
-        }
-    }
 
     public function Count(array $params = []):Result{
         $sql = "SELECT COUNT(attachment_id) AS 'count'
@@ -35,7 +20,7 @@ class Attachment extends Model {
             array(
                 'account_id' =>     ['AND', 'account_id = :sf_account_id'],
                 'reference_id' =>   ['AND', 'reference_id = :sf_reference_id'],
-                'type' =>           ['AND', 'type = :sf_type']
+                'category' =>       ['AND', 'category = :sf_category']
             ),
             'sf_'
         );
@@ -64,7 +49,7 @@ class Attachment extends Model {
         if ($rowsets === false) {
             return new Result(
                 null,
-                App::loc('Failed to count {object}', '', ['object' => 'attachments']),
+                L::loc('Failed to count {object}', '', ['object' => 'attachments']),
                 'error'
             );
         }
@@ -77,8 +62,8 @@ class Attachment extends Model {
     public function Create(array $params = []): Result
     {
         $sql = "INSERT INTO attachments
-            (account_id, type, reference_id, mime_type, path, size, description, create_date)
-            VALUES(:account_id, :type, :reference_id, :mime_type, :path, :size, :description, :create_date)";
+            (account_id, category, reference_id, mime_type, path, size, original_name, updated_at, updated_by)
+            VALUES(:account_id, :category, :reference_id, :mime_type, :path, :size, :original_name, :updated_at, :updated_by)";
 
         try {
             $id = $this->query($sql, $params);
@@ -97,9 +82,10 @@ class Attachment extends Model {
 
     public function Read(array $params = []): Result
     {
-        $sql = "SELECT a.attachment_id, a.account_id, CONCAT(acc.name, ' ', acc.surname) AS account, a.type, a.reference_id, a.mime_type, a.path, a.size, a.description, a.create_date
+        $sql = "SELECT a.attachment_id, a.account_id, s.full_name, a.category, a.reference_id, a.mime_type, a.path, a.size, a.original_name, a.updated_at, IFNULL(acc.name, '') AS updated_by
             FROM attachments AS a
-            INNER JOIN accounts AS acc ON acc.account_id = a.account_id";
+            INNER JOIN seafarers AS s ON s.account_id = a.account_id
+            LEFT JOIN accounts AS acc ON acc.account_id = a.updated_by";
 
         $args = [
             'limit' => $limit= App::getPageLimit($params['limit']??0),
@@ -111,19 +97,17 @@ class Attachment extends Model {
             array(
                 'attachment_id' =>      ['AND', 'a.attachment_id = :sf_attachment_id'],
                 'account_id' =>         ['AND', 'a.account_id = :sf_account_id'],
-                'type' =>               ['AND', 'a.type = :sf_type'],
+                'category' =>           ['AND', 'a.category = :sf_type'],
                 'reference_id' =>       ['AND', 'a.reference_id = :sf_reference_id'],
                 'mime_type'=>           ['AND', "a.mime_type LIKE CONCAT('%', :sf_mime_type, '%')"],
-                'description'=>         ['AND', "a.description LIKE CONCAT('%', :sf_description, '%')"],
-                'create_date_from'=>    ['AND', "a.create_date >= :sf_create_date_from"],
-                'create_date_to'=>      ['AND', "a.create_date <= DATE_ADD(:sf_create_date_to, INTERVAL 1 DAY)"]
+                'original_name'=>       ['AND', "a.original_name LIKE CONCAT('%', :sf_original_name, '%')"],
             ),
             'sf_'
         );
 
         $sql .= $filter->Query;
 
-        $sql .= " ORDER BY a.create_date DESC
+        $sql .= " ORDER BY a.updated_at DESC
             LIMIT :limit OFFSET :offset;";
         
         // Adding meta data when reading all records
@@ -152,7 +136,7 @@ class Attachment extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'attachments']),
+                L::loc('Failed to read {object}', '', ['object' => 'attachments']),
                 'error'
             );
         }
@@ -168,7 +152,7 @@ class Attachment extends Model {
 
     public function List(array $params = []): Result
     {
-        $sql = "SELECT attachment_id, mime_type, size, description, create_date
+        $sql = "SELECT attachment_id, mime_type, size, original_name, updated_at
             FROM attachments";
 
         $args = [];
@@ -176,15 +160,15 @@ class Attachment extends Model {
         $filter = $this->buildSQLFilter(
             $params,
             array(
-                'type' =>               ['AND', 'type = :sf_type'],
-                'reference_id' =>       ['AND', 'reference_id = :sf_reference_id']
+                'category' =>       ['AND', 'category = :sf_type'],
+                'reference_id' =>   ['AND', 'reference_id = :sf_reference_id']
             ),
             'sf_'
         );
 
         $sql .= $filter->Query;
 
-        $sql .= " ORDER BY create_date DESC;";
+        $sql .= " ORDER BY updated_at DESC;";
 
         $args = array_merge($args, $filter->Params);
         
@@ -202,7 +186,7 @@ class Attachment extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'attachments']),
+                L::loc('Failed to read {object}', '', ['object' => 'attachments']),
                 'error'
             );
         }
@@ -216,13 +200,14 @@ class Attachment extends Model {
     {
         $sql = "UPDATE attachments
             SET
-                type = :type,
+                category = :category,
                 reference_id = :reference_id,
                 mime_type = :mime_type,
                 path = :path,
                 size = :size,
-                description = :description,
-                create_date = :create_date
+                original_name = :original_name,
+                updated_at = :updated_at,
+                updated_by = :updated_by
             WHERE attachment_id = :attachment_id AND account_id = :account_id;";
 
         try {
@@ -243,7 +228,7 @@ class Attachment extends Model {
 
     public function Delete(array $params = []): Result
     {
-        $sql = "SELECT attachment_id, type, path FROM attachments WHERE attachment_id = :attachment_id;
+        $sql = "SELECT attachment_id, category, path FROM attachments WHERE attachment_id = :attachment_id;
             DELETE FROM attachments WHERE attachment_id = :attachment_id;";
 
         try {
@@ -262,17 +247,15 @@ class Attachment extends Model {
         }
     }
 
-    public function DeleteByAccount(array $params = []): Result
+    public function DeleteByCategory(array $params = []): Result
     {
-        $sql = "SELECT attachment_id, type, path
+        $sql = "SELECT attachment_id, category, path
             FROM attachments
-            WHERE account_id = :account_id AND (type = :type OR :type = '');
-
+            WHERE account_id = :account_id AND (category = :category OR :category = '');
+            
             DELETE FROM attachments
-            WHERE account_id = :account_id AND (type = :type OR :type = '');";
-
-        $params['type'] = $params['type']??'';
-
+            WHERE account_id = :account_id AND (category = :category OR :category = '');";
+        
         try {
             $rowsets = $this->query($sql, $params);
             
@@ -291,14 +274,14 @@ class Attachment extends Model {
 
     public function DeleteByReference(array $params = []): Result
     {
-        $sql = "SELECT attachment_id, type, path
+        $sql = "SELECT attachment_id, category, path
             FROM attachments
-            WHERE account_id = :account_id AND (type = :type OR :type = '') AND reference_id = :reference_id;
+            WHERE account_id = :account_id AND (category = :category OR :category = '') AND reference_id = :reference_id;
 
             DELETE FROM attachments
-            WHERE account_id = :account_id AND (type = :type OR :type = '') AND reference_id = :reference_id;";
+            WHERE account_id = :account_id AND (category = :category OR :category = '') AND reference_id = :reference_id;";
 
-        $params['type'] = $params['type']??'';
+        $params['category'] = $params['category']??'';
 
         try {
             $rowsets = $this->query($sql, $params);

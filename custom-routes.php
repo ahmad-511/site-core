@@ -4,15 +4,22 @@ use App\Controller\AccountController;
 use App\Core\Response;
 use App\Core\Result;
 
-// Router::get('/test2/{id}', function($reqParams){
-//     return 'Hello, this is a test with ID #'.$reqParams['id'];
-// });
-
-// Router::get('/test/{something}', 'testView');
+Router::get('/test/{something}', 'testView');
 Router::get('/test', 'testView');
+
+Router::get('/test2/{id}', function($reqParams){
+    return 'Hello, this is a test with ID #'.$reqParams['id'];
+});
+
+Router::get('/get', function($reqParams){
+    $data = ['a' => 1, 'b' => 2];
+    Response::json($data, 201);
+});
+
 Router::put('/put', function($reqParams){
-    $res = new Result(print_r($reqParams, true));
-    Response::send($res, 200);
+    $data = ['a' => 1, 'b' => 2];
+    $resp = new Response($data, 201);
+    Response::send($resp);
 });
 
 // Account

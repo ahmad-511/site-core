@@ -2,34 +2,35 @@
 
 use App\Core\App;
 use App\Core\Router;
+use App\Core\Localizer as L;
 ?>
 
 <header class="main-header">
-    <a class="logo" href="<?= Router::routeUrl('home-view')?>">
+    <a class="logo" href="<?= Router::route('home-view')?>">
         <img src="/img/logo.png" alt="Site logo">
-        <span><?= App::loc(WEBSITE_TITLE)?></span>
+        <span><?= L::loc(WEBSITE_TITLE)?></span>
     </a>
     
     <nav class="main-nav">
         <ul class="menu">
-            <li><a class="<?= App::setSelectedPage('about')?>" href="<?= Router::routeUrl('about-view')?>"><i class="icon-bell-o"></i><span><?= App::loc('About')?></span></a></li>
-            <li><a class="<?= App::setSelectedPage('contacts')?>" href="<?= Router::routeUrl('contacts-view')?>"><i class="icon-plus"></i><span><?= App::loc('Contacts')?></span></a></li>
+            <li><a class="<?= App::setSelectedPage('about')?>" href="<?= Router::route('about-view')?>"><i class="icon-bell-o"></i><span><?= L::loc('About')?></span></a></li>
+            <li><a class="<?= App::setSelectedPage('contacts')?>" href="<?= Router::route('contacts-view')?>"><i class="icon-plus"></i><span><?= L::loc('Contacts')?></span></a></li>
             <li class="account"><a tabindex="0">
-                <i class="icon-chevron-down"></i><img class="account-photo" src="<?= Router::routeUrl('account-photo', ['photo_path' => 0])?>"></a>
+                <i class="icon-chevron-down"></i><img class="account-photo" src="<?= Router::route('account-photo', ['photo_path' => 0])?>"></a>
                 <ul class="sub-menu account-menu">
-                <?php if(App::isVerifiedUser()):?>
+                <?php if(App::isActiveUser()):?>
                         <li class="account-name"><?= App::getAccountName()?></li>
-                        <li><a tabindex="0" href="<?= Router::routeUrl('my-profile-view')?>"><?= App::loc('My profile')?></a></li>
-                        <li><a tabindex="0" class="logout" id="logout" href="#"><?= App::loc('Logout')?></a></li>
+                        <li><a tabindex="0" href="<?= Router::route('my-profile-view')?>"><?= L::loc('My profile')?></a></li>
+                        <li><a tabindex="0" class="logout" id="logout" href="#"><?= L::loc('Logout')?></a></li>
                     <?php else:?>
-                        <li><a tabindex="0" href="<?= Router::routeUrl('login-view')?>"><?= App::loc('Login')?></a></li>
-                        <li><a tabindex="0" href="<?= Router::routeUrl('sign-up-view')?>"><?= App::loc('Sign up')?></a></li>
+                        <li><a tabindex="0" href="<?= Router::route('login-view')?>"><?= L::loc('Login')?></a></li>
+                        <li><a tabindex="0" href="<?= Router::route('sign-up-view')?>"><?= L::loc('Sign up')?></a></li>
                     <?php endif;?>
                 </ul>
             </li>
         </ul>
 
-        <?php if(App::isVerifiedUser()):?>
+        <?php if(App::isActiveUser()):?>
             <script type="module">
                 import {$, logout, errorInResponse} from '/js/main.js';
                 import xhr from '/js/xhr.js';
@@ -38,10 +39,10 @@ use App\Core\Router;
                 let audio = null;
 
                 const promptLogout = new Prompt(
-                    '<?= App::loc('Logout from')?>',
+                    '<?= L::loc('Logout from')?>',
                     [
-                        new Action('btnThisDevice', '<?= App::loc('This device')?>', true, 'btn btn-orange'),
-                        new Action('btnAllDevices', '<?= App::loc('All devices')?>', true, 'btn btn-red')
+                        new Action('btnThisDevice', '<?= L::loc('This device')?>', true, 'btn btn-orange'),
+                        new Action('btnAllDevices', '<?= L::loc('All devices')?>', true, 'btn btn-red')
                     ]
                 );
 

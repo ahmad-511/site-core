@@ -1,9 +1,9 @@
 <?php
 
-use App\Core\App;
+use App\Core\Localizer as L;
 ?>
 <section class="access-denied">
-    <h1><?= App::loc('Access denied')?></h1>
+    <h1><?= L::loc('Access denied')?></h1>
     <?php if(!empty($params['message'])):?>
         <p class="reason"><?= $params['message']?></p>
     <?php else:?>

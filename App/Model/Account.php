@@ -6,6 +6,7 @@ namespace App\Model;
 use App\Core\App;
 use App\Core\Model;
 use App\Core\Result;
+use App\Core\Localizer as L;
 
 use Exception;
 
@@ -145,7 +146,7 @@ class Account extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'accounts']),
+                L::loc('Failed to read {object}', '', ['object' => 'accounts']),
                 'error'
             );
         }
@@ -200,7 +201,7 @@ class Account extends Model {
         if ($rowsets === false) {
             return new Result(
                 [],
-                App::loc('Failed to read {object}', '', ['object' => 'accounts']),
+                L::loc('Failed to read {object}', '', ['object' => 'accounts']),
                 'error'
             );
         }

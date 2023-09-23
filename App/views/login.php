@@ -1,30 +1,29 @@
 <?php
-    use App\Core\App;
-
+    use App\Core\Localizer as L;
     use App\Core\Router;
 ?>
 
 <section class="container center-center login">
     <form id="frmLogin" class="form login" novalidate>
         <h2>
-            <img class="logo" src="/App/img/logo.png" alt="<?= App::loc(WEBSITE_TITLE)?>">
-            <span><?= App::loc(WEBSITE_TITLE)?></span>
+            <img class="logo" src="/App/img/logo.png" alt="<?= L::loc(WEBSITE_TITLE)?>">
+            <span><?= L::loc(WEBSITE_TITLE)?></span>
         </h2>
 
         <div class="control-group">
-            <label for="email_mobile"><?= App::loc('Email or mobile number')?></label>
+            <label for="email_mobile"><?= L::loc('Email or mobile number')?></label>
             <input type="text" id="email_mobile" dir="auto" required autocomplete="off" autofocus>
             <p class="validity email_mobile"></p>
         </div>
         <div class="control-group">
-            <label for="password"><?= App::loc('Password')?></label>
+            <label for="password"><?= L::loc('Password')?></label>
             <input type="password" id="password" dir="auto" required autocomplete="new-password">
             <p class="validity password"></p>
         </div>
     
         <div class="form-operations">
-            <button type="submit" class="btn btn-submit" id="btnSubmit"><?=App::loc('Login')?></button>
-            <button type="button" class="btn" id="btnCancel"><?=App::loc('Cancel')?></button>
+            <button type="submit" class="btn btn-submit" id="btnSubmit"><?=L::loc('Login')?></button>
+            <button type="button" class="btn" id="btnCancel"><?=L::loc('Cancel')?></button>
         </div>
     </form>
 </section>
@@ -44,8 +43,8 @@
     btnCancel.addEventListener('click', operationHandler);
 
     // Setup validator
-    validator.add($('#email_mobile'), '<?= App::loc('Invalid {field}', '', ['field' => 'Email or mobile number'])?>', $('.validity.email_mobile'));
-    validator.add($('#password'), '<?= App::loc('Invalid {field}', '', ['field' => 'Password'], 1)?>', $('.validity.password'));
+    validator.add($('#email_mobile'), '<?= L::loc('Invalid {field}', '', ['field' => 'Email or mobile number'])?>', $('.validity.email_mobile'));
+    validator.add($('#password'), '<?= L::loc('Invalid {field}', '', ['field' => 'Password'], 1)?>', $('.validity.password'));
 
     // Handle CRUD operations
     function operationHandler(e) {
@@ -57,12 +56,12 @@
         
         switch (btnId) {
             case 'btnCancel':
-                document.location.href = '<?= Router::routeUrl('home-view')?>';
+                document.location.href = '<?= Router::route('home-view')?>';
                 break;
 
             case 'frmLogin':
                 if(!validator.validate()){
-                    showMessage('<?= App::loc('Some data are missing or invalid')?>', 'warning');
+                    showMessage('<?= L::loc('Some data are missing or invalid')?>', 'warning');
                     return;
                 }
 
@@ -85,7 +84,7 @@
                         }
 
                         setTimeout(function(){
-                            document.location.href = resp.redirect || '<?= Router::routeUrl('home-view')?>';
+                            document.location.href = resp.redirect || '<?= Router::route('home-view')?>';
                         }, 2000);
                     }
                 });
@@ -94,7 +93,7 @@
         }
     }
 
-    const guargMsg = "<?= App::loc($params['GUARD_MESSAGE']) ?>";
+    const guargMsg = "<?= L::loc($params['GUARD_MESSAGE']) ?>";
     
     if(guargMsg){
         showMessage(guargMsg, 'error', 10000);

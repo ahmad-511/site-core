@@ -3,7 +3,7 @@ declare (strict_types = 1);
 
 namespace App\Service;
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Service;
 use App\Controller\AttachmentController;
 use App\Core\Request;
@@ -13,9 +13,9 @@ use App\Service\FileService;
 
 class AttachmentService extends Service
 {
-    public static function AttachmentCount(int $accountID, int $referenceID, string $type = ''): int{
+    public static function AttachmentCount(int $accountId, int $referenceID, string $type = ''): int{
         $attachmentController = new AttachmentController([
-            'account_id' => $accountID,
+            'account_id' => $accountId,
             'reference_id' => $referenceID,
             'type' => $type
         ]);
@@ -25,12 +25,12 @@ class AttachmentService extends Service
         return $resCount->data;
     }
 
-    public static function GetAttachment(int $attachmentID, int $accountID): array{
+    public static function GetAttachment(int $attachmentID, int $accountId): array{
         $attachmentController = new AttachmentController();
 
         $resRead = $attachmentController->Read([
             'attachment_id' => $attachmentID,
-            'account_id' => $accountID
+            'account_id' => $accountId
         ]);
 
         if(!empty($resRead->data)){
@@ -41,33 +41,41 @@ class AttachmentService extends Service
         return $resRead->data;
     }
 
-    public static function PhotoByReference(string $type, int $referenceID): Result
+    public static function AttachmentByReference(string $category, int $referenceId): Result
     {
         $attachmentController = new AttachmentController();
 
-        if($referenceID == 0){
+        if($referenceId == 0){
             return new Result(
                 []
             );
         }
 
         return $attachmentController->List([
-            'type' => $type,
-            'reference_id' => $referenceID
+            'category' => $category,
+            'reference_id' => $referenceId
         ]);
     }
 
-    public static function UploadPersonalPhoto(int $accountID): string{
-        // Check if personal photo included in the request
-        if(!Request::isFileSubmitted('personal_photo')){
-            return '';
+    public static function UploadPersonalPhoto(int $accountId, string $accountName = ''): ?string{
+        // Check if seafarer photo included in the request
+        $status = Request::isFileSubmitted('photo');
+        if($status->success == 0 && empty($status->errors)){
+            return null;
         }
+
+        if($status->success == 0 && !empty($status->errors)){
+            return implode("\n", $status->errors);
+        }
+
+        // Delete old photo
+        self::DeleteByCategory($accountId, 'Photo');
 
         // Store uploaded personal photo
         $file = Request::uploadFile(
-            'personal_photo',
-            PERSONAL_PHOTO_DIR . date('Y-m') .'/',
-            FileService::GenerateFileName('acc_', $accountID),
+            'photo',
+            UPLOAD_DIR . '/personal_photo/' . date('Y-m') .'/',
+            uniqid('a_', true),
             '',
             ['image/jpeg', 'image/png'],
             true
@@ -77,162 +85,128 @@ class AttachmentService extends Service
 
         // Resize uploaded image and then create attachment record
         if(!$uploadError){
-            $resImg = ImageResizer::resize($file->path, 150, 150 , 90);
+            $resImg = ImageResizer::resize($file->path, 250, 250 , 90);
+
+            if(empty($accountName)){
+                $accountName = 'Personal Photo';
+            }
+
+            $ext = pathinfo($file->path, PATHINFO_EXTENSION);
+            $originalName = $accountName . '.' . $ext;
 
             $attachmentController = new AttachmentController([
-                'account_id' => $accountID,
-                'type' => 'PersonalPhoto',
-                'reference_id' => $accountID,
-                'mime_type' => $file->type,
+                'seafarer_id' => $accountId,
+                'category' => 'Photo',
+                'reference_id' => $accountId,
+                'mime_type' => $file->mimeType,
                 'path' => str_replace(UPLOAD_DIR, '', $file->path),
                 'size' => $resImg->size, // for resized image
-                'description' => 'Personal Photo',
-                'create_date' => date('Y-m-d H:i:s')
+                'original_name' => $originalName,
+                'updated_at' => date('Y-m-d H:i:s')
             ]);
 
             $resCreate = $attachmentController->Create();
 
             // DB Error
-            if(is_null($resCreate->data)){
+            if($resCreate->messageType != 'success'){
                 $uploadError = $resCreate->message;
             }
         }
 
         // Provide a better info about uploaded photo
         if($uploadError == 'File type not accepted'){
-            $uploadError = 'Personal photo type not accepted';
+            $uploadError = 'Seafarer photo type not accepted';
         }
 
         return $uploadError;
     }
 
-    public static function UploadCarPhotos(int $accountID, int $carID): string{
-        // Check if car photo included in the request
-        if(!Request::isFileSubmitted('car_photo')){
-            return '';
-        }
-
-        // Checking max allowed attachments per car
-        $currentPhotosCount = self::AttachmentCount($accountID, $carID, 'CarPhoto');
-        $currentPostedPhotos = count(Request::files('car_photo'));
-
-        if($currentPhotosCount + $currentPostedPhotos > MAX_CAR_PHOTOS){
-            return App::loc('Exceeded maximum allowed photos {max_car_photos}', '', ['max_car_photos' => MAX_CAR_PHOTOS]);
-        }
-
-        // Store uploaded car photo
-        $files = Request::uploadFiles(
-            'car_photo',
-            CAR_PHOTO_DIR . date('Y-m') .'/',
-            FileService::GenerateFileName('car_', $carID),
-            '',
-            ['image/jpeg', 'image/png'],
-            true
-        );
-        
-        $uploadErrors = [];
-
-        foreach($files as $file){
-            // Resize uploaded image and then create attachment record
-            if($file->error){
-                $uploadErrors[] = $file->error;
-            }else{
-                $resImg = ImageResizer::resize($file->path, 800, 800 , 90);
-    
-                $attachmentController = new AttachmentController([
-                    'account_id' => $accountID,
-                    'type' => 'CarPhoto',
-                    'reference_id' => $carID,
-                    'mime_type' => $file->type,
-                    'path' => str_replace(UPLOAD_DIR, '', $file->path),
-                    'size' => $resImg->size, // for resized image
-                    'description' => 'Car Photo',
-                    'create_date' => date('Y-m-d H:i:s')
-                ]);
-    
-                $resCreate = $attachmentController->Create();
-    
-                // DB Error
-                if(is_null($resCreate->data)){
-                    $uploadErrors[] = $resCreate->message;
-                }
-            }
-        }
-
-        return implode("\n", $uploadErrors);
-    }
-
-    public static function DeleteAttachment(int $attachmentID): Result{
+    public static function DeleteAttachment(int $attachmentId): Result{
         $attachmentController = new AttachmentController([
-            'attachment_id' => $attachmentID
+            'attachment_id' => $attachmentId
         ]);
 
         $resDelete = $attachmentController->Delete();
         // Just a better message
         if(!is_null($resDelete->data)){
-            $resDelete->message = App::loc('{object} deleted', '', ['object' => 'Photo']);
+            $resDelete->message = L::loc('{object} deleted', '', ['object' => 'File']);
         }
 
         return $resDelete;
     }
 
-    public static function DeleteByAccount(int $accountID, string $type){
+    public static function DeleteByAccount(int $accountId, string $type){
         $attachmentController = new AttachmentController([
-            'account_id' => $accountID,
+            'account_id' => $accountId,
             'type' => $type
         ]);
 
         $attachmentController->DeleteByAccount();
     }
 
-    public static function DeleteByReference(int $accountID, int $referenceID, string $type){
+    public static function DeleteByCategory(int $accountId, string $category=''){
         $attachmentController = new AttachmentController([
-            'account_id' => $accountID,
-            'reference_id' => $referenceID,
-            'type' => $type
+            'seafarer_id' => $accountId,
+            'category' => $category
+        ]);
+
+        $attachmentController->DeleteByCategory();
+    }
+
+    public static function DeleteByReference(int $accountId, string $category, int $referenceId){
+        $attachmentController = new AttachmentController([
+            'seafarer_id' => $accountId,
+            'category' => $category,
+            'reference_id' => $referenceId
         ]);
 
         $attachmentController->DeleteByReference();
     }
 
-    public static function Photo(int $photoID = 0, $default = null){
+    public static function LoadFile(array $params = []){
+        $fileId = intval($params['attachment_id']??0);
+
+        return self::file($fileId);
+    }
+
+    public static function File(int $attachmentId = 0, $default = null){
         $data = null;
         
-        if($photoID > 0){
+        if($attachmentId > 0){
             $attachmentController = new AttachmentController();
             $resRead = $attachmentController->Read([
-                'attachment_id' => $photoID
+                'attachment_id' => $attachmentId
             ]);
     
             $data = $resRead->data;
         }
 
-        $photoPath = '';
-        $photoMimeType = '';
-        $photoSize =  0;
+        $path = '';
+        $mimeType = '';
+        $size =  0;
 
         // DB Error
         if(!is_null($data) && !empty($data)){
             $data = $data[0];
 
-            $photoMimeType = $data['mime_type'];
-            $photoPath = UPLOAD_DIR . $data['path'];
+            $mimeType = $data['mime_type'];
+            $path = UPLOAD_DIR . $data['path'];
         }
 
-        if(empty($photoPath)){
-            $photoPath = $default?? BASE_DIR . '/img/user.png';
-            $photoMimeType ='image/png';
+        if(empty($path)){
+            $path = $default?? BASE_DIR . '/../img/user.png';
+            $mimeType ='image/png';
 
-        }elseif(!file_exists($photoPath)){
-            $photoPath = BASE_DIR . '/img/broken.png';
-            $photoMimeType ='image/png';
+        }elseif(!file_exists($path)){
+            $path = BASE_DIR . '/../img/broken.png';
+            $mimeType ='image/png';
         }
 
-        header('Content-Type: ' . $photoMimeType);
+        header('Content-Type: ' . $mimeType);
 		header('Content-Disposition: inline');
-		header('Content-Length: '. $photoSize);
+		header('Content-Length: '. $size);
 		
-		// Write directly to the ouput buffer		   
-		readfile($photoPath);
+		// Write directly to the output buffer		   
+		readfile($path);
     }
 }

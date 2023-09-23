@@ -55,13 +55,13 @@ class Response{
      * Send raw response to client
      * @param any $data raw data to be sent
      * @param int $statusCode response status code
-     * @param aray $headers response headers to be set
+     * @param array $headers response headers to be set
      */
     public static function sendRaw($data, int $statusCode = 200, array $headers = []) {
         self::setStatus($statusCode);
         self::setHeaders($headers);
         
-        if(gettype($data) == 'object'){
+        if(in_array(gettype($data), ['array', 'object'])){
             $data = json_encode($data, JSON_THROW_ON_ERROR, 512);
         }
 
@@ -71,8 +71,8 @@ class Response{
     }
 
     /**
-     * Send Respnse object to client
-     * @param Reponse $response object to be sent
+     * Send Response object to client
+     * @param Response $response object to be sent
      */
     public static function send(Response $response) {
         self::sendRaw($response->data, $response->statusCode, $response->headers);

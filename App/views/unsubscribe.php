@@ -1,24 +1,24 @@
 <?php
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Router;
 ?>
 
 <section class="container">
     <form id="frmUnsubscribe" class="unsubscribe-form" novalidate>
-        <h2 class="unsubscribe"><i class="icon-envelope-o"></i> <?= App::loc('Mailing list subscription')?></h2>
+        <h2 class="unsubscribe"><i class="icon-envelope-o"></i> <?= L::loc('Mailing list subscription')?></h2>
 
-        <p class="description"><?= App::loc('Please choose what you want to subscribe to')?></p>
+        <p class="description"><?= L::loc('Please choose what you want to subscribe to')?></p>
         
         <div class="control-group">
             <p>
                 <input type="checkbox" id="notification_emails">
-                <label for="notification_emails"><?= App::loc('Notification emails')?></label>
+                <label for="notification_emails"><?= L::loc('Notification emails')?></label>
             </p>
         </div>
 
         <div class="form-operations">
-            <button type="submit" class="btn btn-submit btn-green" id="btnSubmit"><?= App::loc('Update')?></button>
+            <button type="submit" class="btn btn-submit btn-green" id="btnSubmit"><?= L::loc('Update')?></button>
         </div>
     </form>
 </section>

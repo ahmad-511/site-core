@@ -2,16 +2,17 @@
 
 use App\Core\App;
 use App\Core\Router;
+use App\Core\Localizer as L;
 
 ?>
 
 <section class="data-list">
-    <h2 class="notifications"><i class="icon-bell"></i> <?= App::loc('Notifications')?></h2>
+    <h2 class="notifications"><i class="icon-bell"></i> <?= L::loc('Notifications')?></h2>
 
     <div class="toolbar" id="toolbar">
         <div id="dvPageRecords"></div>
         <div class="toolbar-group pagening">
-            <button class="btn btn-blue" id="btnRefresh"><?= App::loc('Refresh')?></button>
+            <button class="btn btn-blue" id="btnRefresh"><?= L::loc('Refresh')?></button>
             <button class="btn btn-yellow" id="btnPrevious"><i class="icon-chevron-left"></i></button>
             <input class="page-number" type="number" id="txtPageNumber" min="1" value="1">
             <button class="btn btn-yellow" id="btnNext"><i class="icon-chevron-right"></i></button>
@@ -184,7 +185,7 @@ use App\Core\Router;
                         updateRecordsStats($('#dvPageRecords'), totalRecords, currentPage, totalPages, '<?= Router::getCurrentLocaleCode()?>');
 
                         if(totalRecords <= 0){
-                            dvData.innerHTML = `<p class="no-data"><?= App::loc('You have no notifications')?></p>`;
+                            dvData.innerHTML = `<p class="no-data"><?= L::loc('You have no notifications')?></p>`;
                         }
 
                         break;
@@ -199,7 +200,7 @@ use App\Core\Router;
                         updateRecordsStats($('#dvPageRecords'), --totalRecords, currentPage, totalPages, '<?= Router::getCurrentLocaleCode()?>');
                         
                         if(totalRecords <= 0){
-                            dvData.innerHTML = `<p class="no-data"><?= App::loc('You have no notifications')?></p>`;
+                            dvData.innerHTML = `<p class="no-data"><?= L::loc('You have no notifications')?></p>`;
                         }
 
                         break;

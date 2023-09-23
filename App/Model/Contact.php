@@ -2,7 +2,7 @@
 declare (strict_types = 1);
 namespace App\Model;
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Router;
 use App\Core\Mailer;
 use App\Core\Model;
@@ -40,7 +40,7 @@ class Contact extends Model
         if($dataErr = $this->validator->validate()){
             return new Result(
                 $dataErr,
-                App::loc('Some data are missing or invalid'),
+                L::loc('Some data are missing or invalid'),
                 'validation_error',
                 ''
             );
@@ -52,7 +52,7 @@ class Contact extends Model
         if(!$tpl){
             return new Result(
                 null,
-                App::loc('Mail template cannot be loaded', Router::getCurrentLocaleCode()),
+                L::loc('Mail template cannot be loaded', Router::getCurrentLocaleCode()),
                 'error',
                 ''
             );
@@ -66,12 +66,12 @@ class Contact extends Model
             ])
         ];
 
-        $isSent = Mailer::sendTemplate(SUPPORT_EMAIL, App::loc('Support message'), 'general', $params);
+        $isSent = Mailer::sendTemplate(SUPPORT_EMAIL, L::loc('Support message'), 'general', $params);
 
         if ($isSent) {
             return new Result(
                 null,
-                App::loc('Thank you for contacting us', Router::getCurrentLocaleCode()),
+                L::loc('Thank you for contacting us', Router::getCurrentLocaleCode()),
                 'success',
                 ''
             );
@@ -79,7 +79,7 @@ class Contact extends Model
 
         return new Result(
             null,
-            App::loc('Mail server is down', Router::getCurrentLocaleCode()),
+            L::loc('Mail server is down', Router::getCurrentLocaleCode()),
             'error',
             ''
         );

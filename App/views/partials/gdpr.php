@@ -1,12 +1,12 @@
 <?php
 
-use App\Core\App;
+use App\Core\Localizer as L;
 
 ?>
 
 <div class="gdpr-consent hidden" id="gdprConsent">
-	<?= App::loc('This website uses minimum amount of cookies to provide you with best experience')?>
-	<button class="button"><?= App::loc('I Consent')?></button>
+	<?= L::loc('This website uses minimum amount of cookies to provide you with best experience')?>
+	<button class="button"><?= L::loc('I Consent')?></button>
 </div>
 
 <script type="module">

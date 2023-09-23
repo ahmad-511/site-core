@@ -10,7 +10,7 @@ use App\Core\ValidationRule;
 use App\Core\Result;
 use App\Core\File;
 use App\Core\Request;
-
+use App\Core\Localizer as L;
 
 // This controller has no external api and should be called directly from the code
 class AttachmentController extends Controller
@@ -55,7 +55,7 @@ class AttachmentController extends Controller
         if($dataErr = $this->validator->validate(['attachment_id'])){
             return new Result(
                 $dataErr,
-                App::loc('Some data are missing or invalid'),
+                L::loc('Some data are missing or invalid'),
                 'validation_error'
             );
         }
@@ -76,7 +76,7 @@ class AttachmentController extends Controller
         if($maxAttachmentsCount && $resCount->data >= $maxAttachmentsCount){
             return new Result(
                 null,
-                App::loc('Exceeded max attachments count {max_attachments}', '', ['max_attachments' => $maxAttachmentsCount]),
+                L::loc('Exceeded max attachments count {max_attachments}', '', ['max_attachments' => $maxAttachmentsCount]),
                 'error'
             );
         }
@@ -111,7 +111,7 @@ class AttachmentController extends Controller
 
         return new Result(
             $resRead->data,
-            App::loc('{object} created', '', ['object' => 'Attachment']),
+            L::loc('{object} created', '', ['object' => 'Attachment']),
             'success',
             '',
             $resRead->metaData
@@ -157,7 +157,7 @@ class AttachmentController extends Controller
         }
 
         if($isSingleRecord && empty($resRead->data)){
-            $message = App::loc('{object} not found', '', ['object' => 'Attachment']);
+            $message = L::loc('{object} not found', '', ['object' => 'Attachment']);
             $messageType = 'info';
         }
 
@@ -212,7 +212,7 @@ class AttachmentController extends Controller
         
         return new Result(
             $deleted,
-            APP::loc('{actual} of {total} files have been deleted', '', ['actual' => $actualDeleted, 'total' => count($deleted)])
+            L::loc('{actual} of {total} files have been deleted', '', ['actual' => $actualDeleted, 'total' => count($deleted)])
         );
     }
 
@@ -237,7 +237,7 @@ class AttachmentController extends Controller
         
         return new Result(
             $deleted,
-            APP::loc('{actual} of {total} files have been deleted', '', ['actual' => $actualDeleted, 'total' => count($deleted)])
+            L::loc('{actual} of {total} files have been deleted', '', ['actual' => $actualDeleted, 'total' => count($deleted)])
         );
     }
 
@@ -250,13 +250,13 @@ class AttachmentController extends Controller
 
         if(!empty($resReferenced->data)){
             $resReferenced->data = array_map(function($item){
-                $item['model'] = App::loc($item['model']);
+                $item['model'] = L::loc($item['model']);
                 return $item;
             }, $resReferenced->data);
             
             return new Result(
                 $resReferenced->data,
-                App::loc('{object} is referenced by', '', ['object' => 'Attachment']),
+                L::loc('{object} is referenced by', '', ['object' => 'Attachment']),
                 'reference_error',
                 ''
             );
@@ -270,7 +270,7 @@ class AttachmentController extends Controller
 
             return new Result(
                 $this->data['attachment_id'],
-                App::loc('{object} deleted', '', ['object' => 'Attachment']),
+                L::loc('{object} deleted', '', ['object' => 'Attachment']),
                 'success',
                 ''
             );
@@ -278,7 +278,7 @@ class AttachmentController extends Controller
 
         return new Result(
             null,
-            App::loc('Failed to delete {object}', '',['object' => 'Attachment']),
+            L::loc('Failed to delete {object}', '',['object' => 'Attachment']),
             'error',
             ''
         );
@@ -306,7 +306,7 @@ class AttachmentController extends Controller
 
         return new Result(
             null,
-            App::loc('Failed to count {object}', '', ['object' => 'attachments']),
+            L::loc('Failed to count {object}', '', ['object' => 'attachments']),
             'error',
             ''
         );

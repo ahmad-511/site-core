@@ -1,25 +1,25 @@
 <?php
 
-use App\Core\App;
+use App\Core\Localizer as L;
 use App\Core\Router;
 
 ?>
 <section class="data-editor">
     <form id="frmEditor" class="form" novalidate>
-        <h2><span id="entityOperation"></span> <?= App::loc('Account')?> <span id="entityId"></span></h2>
+        <h2><span id="entityOperation"></span> <?= L::loc('Account')?> <span id="entityId"></span></h2>
 
         <input type="hidden" id="account_id" data-default="0">
 
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="account_type"><?= App::loc('Account type')?></label>
+                    <label for="account_type"><?= L::loc('Account type')?></label>
                     <span class="validity account_type"></span>
                 </p>
                 <select id="account_type" data-default="User" data-search-default="">
                     <option value="" search-only></option>
-                    <option value="User"><?= App::loc('User')?></option>
-                    <option value="Admin"><?= App::loc('Admin')?></option>
+                    <option value="User"><?= L::loc('User')?></option>
+                    <option value="Admin"><?= L::loc('Admin')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -28,13 +28,13 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="gender"><?= App::loc('Gender')?></label>
+                    <label for="gender"><?= L::loc('Gender')?></label>
                     <span class="validity gender"></span>
                 </p>
                 <select id="gender" required autofocus  data-default="M" data-search-default="">
                     <option value="" search-only></option>
-                    <option value="M"><?= App::loc('M')?></option>
-                    <option value="F"><?= App::loc('F')?></option>
+                    <option value="M"><?= L::loc('M')?></option>
+                    <option value="F"><?= L::loc('F')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -43,7 +43,7 @@ use App\Core\Router;
                 <p>&nbsp;</p>
                 <p>
                     <input type="checkbox" id="hidden_personality" value="0">
-                    <label for="hidden_personality"><?= App::loc('Show my profile to females only')?></label>
+                    <label for="hidden_personality"><?= L::loc('Show my profile to females only')?></label>
                 </p>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -52,7 +52,7 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="name"><?= App::loc('Name')?></label>
+                    <label for="name"><?= L::loc('Name')?></label>
                     <span class="validity name"></span>
                 </p>
                 <input type="text" id="name" pattern="[a-zA-Z ء-ي]{3,25}" required>
@@ -61,7 +61,7 @@ use App\Core\Router;
 
             <div class="control-group" searchable>
                 <p>
-                    <label for="surname"><?= App::loc('Surname')?></label>
+                    <label for="surname"><?= L::loc('Surname')?></label>
                     <span class="validity surname"></span>
                 </p>
                 <input type="text" id="surname" pattern="[a-zA-Z ء-ي]{3,25}" required>
@@ -72,55 +72,32 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="country"><?= App::loc('Country')?></label>
-                    <span class="validity country"></span>
-                </p>
-                <select id="country" pattern="[A-Z]{2}" required data-search-default=""></select>
-                <p class="hint">&nbsp;</p>
-            </div>
-
-            <div class="control-group" searchable>
-                <p>
-                    <label for="mobile"><?= App::loc('Mobile')?></label>
-                    <span class="validity mobile"></span>
-                </p>
-                <div class="mobile-number-container">
-                    <span id="dialingCode" class="dialing-code" dir="ltr">+000</span>
-                    <input type="tel" id="mobile" pattern="" required>
-                </div>
-                <p class="hint"><?= App::loc(MOBILE_VERIFICATION_MODE == 'Sned'?'Verification code will be sent to your mobile': 'You have to send an SMS from this number')?></p>
-            </div>
-        </div>
-
-        <div class="control-set">
-            <div class="control-group" searchable>
-                <p>
-                    <label for="email"><?= App::loc('Email')?></label>
+                    <label for="email"><?= L::loc('Email')?></label>
                     <span class="validity email"></span>
                 </p>
                 <input type="email" id="email" required>
-                <p class="hint"><?= App::loc('Used for customer support only')?></p>
+                <p class="hint"><?= L::loc('Used for customer support only')?></p>
             </div>
 
             <div class="control-group">
                 <p>
-                    <label for="password"><?= App::loc('Password')?></label>
+                    <label for="password"><?= L::loc('Password')?></label>
                     <span class="validity password"></span>
                 </p>
                 <input type="password" id="password" autocomplete="new-password">
-                <p class="hint"><?= App::loc('6 Characters minimum')?></p>
+                <p class="hint"><?= L::loc('6 Characters minimum')?></p>
             </div>
         </div>
 
         <div class="control-set">
             <div class="control-group">
                 <p>
-                    <label for="preferred_language"><?= App::loc('Preferred language')?></label>
+                    <label for="preferred_language"><?= L::loc('Preferred language')?></label>
                     <span class="validity preferred_language"></span>
                 </p>
                 <select id="preferred_language"  data-default="ar">
-                    <option value="ar"><?= App::loc('ar')?></option>
-                    <option value="en"><?= App::loc('en')?></option>
+                    <option value="ar"><?= L::loc('ar')?></option>
+                    <option value="en"><?= L::loc('en')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -129,7 +106,7 @@ use App\Core\Router;
                 <p>&nbsp;</p>
                 <p>
                     <input type="checkbox" id="notification_emails" value="0">
-                    <label for="notification_emails"><?= App::loc('Send me notifications via email')?></label>
+                    <label for="notification_emails"><?= L::loc('Send me notifications via email')?></label>
                 </p>
                 <p class="hint">&nbsp;</p>
             </div>
@@ -138,52 +115,52 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="account_status"><?= App::loc('Account status')?></label>
+                    <label for="account_status"><?= L::loc('Account status')?></label>
                     <span class="validity account_status"></span>
                 </p>
                 <select id="account_status" required data-default="Pending" data-search-default="">
                     <option value="" search-only></option>
-                    <option value="Pending"><?= App::loc('Pending')?></option>
-                    <option value="Warned"><?= App::loc('Warned')?></option>
-                    <option value="Verifying"><?= App::loc('Verifying')?></option>
-                    <option value="Active"><?= App::loc('Active')?></option>
-                    <option value="Suspended"><?= App::loc('Suspended')?></option>
-                    <option value="Deleted"><?= App::loc('Deleted')?></option>
+                    <option value="Pending"><?= L::loc('Pending')?></option>
+                    <option value="Warned"><?= L::loc('Warned')?></option>
+                    <option value="Verifying"><?= L::loc('Verifying')?></option>
+                    <option value="Active"><?= L::loc('Active')?></option>
+                    <option value="Suspended"><?= L::loc('Suspended')?></option>
+                    <option value="Deleted"><?= L::loc('Deleted')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
 
                 <p>
-                    <label for="personal_photo_verification"><?= App::loc('Personal photo verification')?></label>
+                    <label for="personal_photo_verification"><?= L::loc('Personal photo verification')?></label>
                     <span class="validity personal_photo_verification"></span>
                 </p>
                 <select id="personal_photo_verification" data-default="Verified" data-search-default="x">
                     <option value="x"></option>
-                    <option value=""><?= App::loc('Not verified')?></option>
-                    <option value="Verified"><?= App::loc('Verified')?></option>
-                    <option value="Rejected"><?= App::loc('Rejected')?></option>
+                    <option value=""><?= L::loc('Not verified')?></option>
+                    <option value="Verified"><?= L::loc('Verified')?></option>
+                    <option value="Rejected"><?= L::loc('Rejected')?></option>
                 </select>
                 <p class="hint">&nbsp;</p>
 
                 <p>
-                    <label for="remarks"><?= App::loc('Remarks')?></label>
+                    <label for="remarks"><?= L::loc('Remarks')?></label>
                     <span class="validity remarks"></span>
                 </p>
                 <input type="text" id="remarks">
-                <p class="hint"><?= App::loc('Appears to user')?></p>
+                <p class="hint"><?= L::loc('Appears to user')?></p>
             </div>
 
             <div class="control-group personal-photo">
-                <label for="personal_photo"><?= App::loc('Personal photo')?></label>
+                <label for="personal_photo"><?= L::loc('Personal photo')?></label>
                 <input type="file" id="personal_photo">
                 <img src="/App/img/user.png" id="imgPersonalPhoto">
-                <p class="hint"><?= App::loc('Clear photo of your face')?></p>
+                <p class="hint"><?= L::loc('Clear photo of your face')?></p>
             </div>
         </div>
 
         <div class="control-set">
             <div class="control-group" searchable>
                 <p>
-                    <label for="admin_notes"><?= App::loc('Admin notes')?></label>
+                    <label for="admin_notes"><?= L::loc('Admin notes')?></label>
                     <span class="validity admin_notes"></span>
                 </p>
                 <textarea id="admin_notes" rows="3"></textarea>
@@ -193,28 +170,17 @@ use App\Core\Router;
                 <input type="hidden" id="email_verification">
                 <input type="hidden" id="mobile_verification">
 
-                <label><?= App::loc('Verification status')?></label>
+                <label><?= L::loc('Verification status')?></label>
                 <table class="verification-status">
                     <tr>
-                        <td><?= App::loc('Photo')?></td>
+                        <td><?= L::loc('Photo')?></td>
                         <td><span class="tag" id="photoVerification">&nbsp;</span></td>
                     </tr>
                     <tr>
-                        <td><?= App::loc('Email')?></td>
+                        <td><?= L::loc('Email')?></td>
                         <td>
                             <span class="tag" id="emailVerification">&nbsp;</span>
-                            <button type="button" class="btn btn-yellow hidden" id="btnEmailVerification"><?= App::loc('Send link')?></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><?= App::loc('Mobile')?></td>
-                        <td>
-                            <span class="tag" id="mobileVerification">&nbsp;</span>
-                            <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                                <button type="button" class="btn btn-yellow hidden" id="btnMobileVerification"><?= App::loc('Send SMS')?></button>
-                            <?php else:?>
-                                <p class="hint hidden" id="smsVerificationNumber"></p>
-                            <?php endif?>
+                            <button type="button" class="btn btn-yellow hidden" id="btnEmailVerification"><?= L::loc('Send link')?></button>
                         </td>
                     </tr>
                 </table>
@@ -224,7 +190,7 @@ use App\Core\Router;
         <div class="control-set">
             <div class="control-group" searchable search-only>
                 <p>
-                    <label for="register_date_from"><?= App::loc('Register date from')?></label>
+                    <label for="register_date_from"><?= L::loc('Register date from')?></label>
                     <span class="register_date_from"></span>
                 </p>
                 <input type="date" id="register_date_from">
@@ -233,7 +199,7 @@ use App\Core\Router;
 
             <div class="control-group" searchable search-only>
                 <p>
-                    <label for="register_date_to"><?= App::loc('Register date to')?></label>
+                    <label for="register_date_to"><?= L::loc('Register date to')?></label>
                     <span class="register_date_to"></span>
                 </p>
                 <input type="date" id="register_date_to">
@@ -242,8 +208,8 @@ use App\Core\Router;
         </div>
 
         <div class="form-operations">
-            <button type="submit" class="btn btn-submit" id="btnSubmit"><?=App::loc('Save')?></button>
-            <button type="button" class="btn" id="btnCancel"><?=App::loc('Cancel')?></button>
+            <button type="submit" class="btn btn-submit" id="btnSubmit"><?=L::loc('Save')?></button>
+            <button type="button" class="btn" id="btnCancel"><?=L::loc('Cancel')?></button>
         </div>
     </form>
 </section>
@@ -257,7 +223,7 @@ use App\Core\Router;
 
         <table>
             <tr>
-                <th><?= App::loc('ID')?></th>
+                <th><?= L::loc('ID')?></th>
                 <td>
                     <span class="info-data" id="info_account_id"></span>
                     <div class="account-image-container">
@@ -267,73 +233,73 @@ use App\Core\Router;
                 </td>
             </tr>
             <tr>
-                <th><?= App::loc('Account type')?></th>
+                <th><?= L::loc('Account type')?></th>
                 <td class="info-data" id="info_account_type"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Gender')?></th>
+                <th><?= L::loc('Gender')?></th>
                 <td class="info-data" id="info_gender"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Hidden personality')?></th>
+                <th><?= L::loc('Hidden personality')?></th>
                 <td class="info-data" id="info_hidden_personality"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Name')?></th>
+                <th><?= L::loc('Name')?></th>
                 <td class="info-data" id="info_name"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Surname')?></th>
+                <th><?= L::loc('Surname')?></th>
                 <td class="info-data" id="info_surname"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Country')?></th>
+                <th><?= L::loc('Country')?></th>
                 <td class="info-data" id="info_country"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Email')?></th>
+                <th><?= L::loc('Email')?></th>
                 <td class="flex">
                     <span class="info-data" id="info_email"></span>
                     <span class="tag" id="infoEmailVerification">&nbsp;</span>
                 </td>
             </tr>
             <tr>
-                <th><?= App::loc('Mobile')?></th>
+                <th><?= L::loc('Mobile')?></th>
                 <td class="flex">
                     <span class="info-data" id="info_mobile"></span>
                     <span class="tag" id="infoMobileVerification">&nbsp;</span>
                 </td>
             </tr>
             <tr>
-                <th><?= App::loc('Preferred language')?></th>
+                <th><?= L::loc('Preferred language')?></th>
                 <td class="info-data" id="info_preferred_language"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Notification emails')?></th>
+                <th><?= L::loc('Notification emails')?></th>
                 <td class="info-data" id="info_notification_emails"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Account status')?></th>
+                <th><?= L::loc('Account status')?></th>
                 <td class="info-data" id="info_account_status"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Ratings count')?></th>
+                <th><?= L::loc('Ratings count')?></th>
                 <td class="info-data" id="info_ratings_count"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Rating')?></th>
+                <th><?= L::loc('Rating')?></th>
                 <td class="info-data" id="info_rating"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Admin notes')?></th>
+                <th><?= L::loc('Admin notes')?></th>
                 <td class="info-data" id="info_admin_notes"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Register date')?></th>
+                <th><?= L::loc('Register date')?></th>
                 <td class="info-data date-time" id="info_register_date"></td>
             </tr>
             <tr>
-                <th><?= App::loc('Remarks')?></th>
+                <th><?= L::loc('Remarks')?></th>
                 <td class="info-data" id="info_remarks"></td>
             </tr>
         </table>
@@ -341,15 +307,15 @@ use App\Core\Router;
 </section>
 
 <section class="data-list">
-    <h2 class="accounts-manager"><i class="icon-user"></i> <?= App::loc('Accounts manager')?></h2>
+    <h2 class="accounts-manager"><i class="icon-user"></i> <?= L::loc('Accounts manager')?></h2>
 
     <div class="toolbar">
         <div class="toolbar-group">
-            <button class="btn btn-green" id="btnCreate"><?= App::loc('Create')?></button>
-            <button class="btn btn-orange" id="btnUpdate"><?= App::loc('Update')?></button>
-            <button class="btn btn-red" id="btnDelete"><?= App::loc('Delete')?></button>
-            <button class="btn btn-blue" id="btnRefresh"><?= App::loc('Refresh')?></button>
-            <button class="btn btn-gray" id="btnInfo"><?= App::loc('Info')?></button>
+            <button class="btn btn-green" id="btnCreate"><?= L::loc('Create')?></button>
+            <button class="btn btn-orange" id="btnUpdate"><?= L::loc('Update')?></button>
+            <button class="btn btn-red" id="btnDelete"><?= L::loc('Delete')?></button>
+            <button class="btn btn-blue" id="btnRefresh"><?= L::loc('Refresh')?></button>
+            <button class="btn btn-gray" id="btnInfo"><?= L::loc('Info')?></button>
         </div>
         <div class="toolbar-group pagening">
             <button class="btn btn-yellow" id="btnSearch"><i class="icon-search"></i></button>
@@ -363,16 +329,16 @@ use App\Core\Router;
         <table class="data-grid" id="tblData">
             <thead>
             <tr>
-                <th data-model="account_id" use-value="account_id"><?= App::loc('ID')?></th>
-                <th data-model="account_type" data-class="auto-width"><?= App::loc('Account type')?></th>
-                <th data-model="gender" data-class="auto-width"><?= App::loc('Gender')?></th>
-                <th data-model="name" data-class="auto-width"><?= App::loc('Name')?></th>
-                <th data-model="surname" data-class="auto-width"><?= App::loc('Surname')?></th>
-                <th data-model="country" data-class="auto-width uppercase"><?= App::loc('Country')?></th>
-                <th data-model="register_date" data-class="auto-width ltr"><?= App::loc('Register date')?></th>
-                <th data-model="account_status" data-class="auto-width"><?= App::loc('Account status')?></th>
-                <th data-model="ratings_count" data-class="auto-width"><?= App::loc('Ratings count')?></th>
-                <th data-model="rating" data-class="auto-width"><?= App::loc('Rating')?></th>
+                <th data-model="account_id" use-value="account_id"><?= L::loc('ID')?></th>
+                <th data-model="account_type" data-class="auto-width"><?= L::loc('Account type')?></th>
+                <th data-model="gender" data-class="auto-width"><?= L::loc('Gender')?></th>
+                <th data-model="name" data-class="auto-width"><?= L::loc('Name')?></th>
+                <th data-model="surname" data-class="auto-width"><?= L::loc('Surname')?></th>
+                <th data-model="country" data-class="auto-width uppercase"><?= L::loc('Country')?></th>
+                <th data-model="register_date" data-class="auto-width ltr"><?= L::loc('Register date')?></th>
+                <th data-model="account_status" data-class="auto-width"><?= L::loc('Account status')?></th>
+                <th data-model="ratings_count" data-class="auto-width"><?= L::loc('Ratings count')?></th>
+                <th data-model="rating" data-class="auto-width"><?= L::loc('Rating')?></th>
             </tr>
             </thead>
             <tfoot>
@@ -413,58 +379,58 @@ use App\Core\Router;
     const promptAccountDelete = new Prompt(
         '',
         [
-            new Action('btnCancel', '<?= App::loc('Cancel')?>', false, 'btn'),
-            new Action('btnDelete', '<?= App::loc('Delete')?>', true, 'btn btn-red')
+            new Action('btnCancel', '<?= L::loc('Cancel')?>', false, 'btn'),
+            new Action('btnDelete', '<?= L::loc('Delete')?>', true, 'btn btn-red')
         ]
     );
 
     const promptEmailVerification = new Prompt(
         '',
         [
-            new Action('btnCancel', '<?= App::loc('Cancel')?>', false, 'btn'),
-            new Action('btnSend', '<?= App::loc('Send')?>', true, 'btn btn-green')
+            new Action('btnCancel', '<?= L::loc('Cancel')?>', false, 'btn'),
+            new Action('btnSend', '<?= L::loc('Send')?>', true, 'btn btn-green')
         ]
     );
 
     const promptMobileVerification = new Prompt(
         '',
         [
-            new Action('btnCancel', '<?= App::loc('Cancel')?>', false, 'btn'),
-            new Action('btnSend', '<?= App::loc('Send')?>', true, 'btn btn-green')
+            new Action('btnCancel', '<?= L::loc('Cancel')?>', false, 'btn'),
+            new Action('btnSend', '<?= L::loc('Send')?>', true, 'btn btn-green')
         ]
     );
 
     const accountType = {
-        Admin: '<?= App::loc('Admin')?>',
-        User: '<?= App::loc('User')?>'
+        Admin: '<?= L::loc('Admin')?>',
+        User: '<?= L::loc('User')?>'
     };
 
     const gender = {
-        M: '<?= App::loc('M')?>',
-        F: '<?= App::loc('F')?>'
+        M: '<?= L::loc('M')?>',
+        F: '<?= L::loc('F')?>'
     };
     
     const accountStatus = {
-        Pending: '<?= App::loc('Pending')?>',
-        Warned: '<?= App::loc('Warned')?>',
-        Verifying: '<?= App::loc('Verifying')?>',
-        Active: '<?= App::loc('Active')?>',
-        Suspended: '<?= App::loc('Suspended')?>',
-        Deleted: '<?= App::loc('Deleted')?>'
+        Pending: '<?= L::loc('Pending')?>',
+        Warned: '<?= L::loc('Warned')?>',
+        Verifying: '<?= L::loc('Verifying')?>',
+        Active: '<?= L::loc('Active')?>',
+        Suspended: '<?= L::loc('Suspended')?>',
+        Deleted: '<?= L::loc('Deleted')?>'
     };
     
     const preferredLanguage = {
-        ar: '<?= App::loc('ar')?>',
-        en: '<?= App::loc('en')?>'
+        ar: '<?= L::loc('ar')?>',
+        en: '<?= L::loc('en')?>'
     };
 
     const ratingDescriptions = [
-        '<?= App::loc('Unspecified')?>',
-        '<?= App::loc('Bad')?>',
-        '<?= App::loc('Okay')?>',
-        '<?= App::loc('Good')?>',
-        '<?= App::loc('Very good')?>',
-        '<?= App::loc('Excellent')?>'
+        '<?= L::loc('Unspecified')?>',
+        '<?= L::loc('Bad')?>',
+        '<?= L::loc('Okay')?>',
+        '<?= L::loc('Good')?>',
+        '<?= L::loc('Very good')?>',
+        '<?= L::loc('Excellent')?>'
     ];
 
     $('#frmEditor').addEventListener('submit', operationHandler);
@@ -480,9 +446,6 @@ use App\Core\Router;
     $('#btnInfo').addEventListener('click', operationHandler);
     $('#btnCloseInfo').addEventListener('click', operationHandler);
     $('#btnEmailVerification').addEventListener('click', operationHandler);
-    <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-        $('#btnMobileVerification').addEventListener('click', operationHandler);
-    <?php endif?>
 
     tblMgr.events.listen('cell-render', (col, value, data) => {
         switch(col){
@@ -504,12 +467,12 @@ use App\Core\Router;
     });
 
     // Setup validator
-    validator.add($('#name'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.name'));
-    validator.add($('#surname'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.surname'));
-    validator.add($('#country'), '<?= App::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.country'));
-    validator.add($('#mobile'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.mobile'));
-    validator.add($('#email'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.email'));
-    validator.add($('#password'), '<?= App::loc('Invalid or missing {field}', '', ['field' => ''], 1)?>', $('.validity.password'));
+    validator.add($('#name'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.name'));
+    validator.add($('#surname'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.surname'));
+    validator.add($('#country'), '<?= L::loc('Invalid {field}', '', ['field' => ''])?>', $('.validity.country'));
+    validator.add($('#mobile'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.mobile'));
+    validator.add($('#email'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''])?>', $('.validity.email'));
+    validator.add($('#password'), '<?= L::loc('Invalid or missing {field}', '', ['field' => ''], 1)?>', $('.validity.password'));
     
     // Account delete confirmation
     promptAccountDelete.events.listen('Action', action => {
@@ -642,7 +605,7 @@ use App\Core\Router;
                 break;
 
             case 'btnSearch':
-                btnSubmit.textContent = '<?= App::loc('Search')?>';
+                btnSubmit.textContent = '<?= L::loc('Search')?>';
                 currentOper = 'Search';
 
                 $('#entityOperation').textContent = btnSubmit.textContent;
@@ -654,7 +617,7 @@ use App\Core\Router;
                 break;
 
             case 'btnCreate':
-                btnSubmit.textContent = '<?= App::loc('Create')?>';
+                btnSubmit.textContent = '<?= L::loc('Create')?>';
                 currentOper = 'Create';
 
                 $('#entityOperation').textContent = btnSubmit.textContent;
@@ -670,11 +633,11 @@ use App\Core\Router;
 
             case 'btnUpdate':
                 if (!accountID) {
-                    showMessage('<?= App::loc('Please select a record first')?>', 'warning');
+                    showMessage('<?= L::loc('Please select a record first')?>', 'warning');
                     return false;
                 }
 
-                btnSubmit.textContent = '<?= App::loc('Update')?>';
+                btnSubmit.textContent = '<?= L::loc('Update')?>';
                 currentOper = 'Update';
 
                 $('#entityOperation').textContent = btnSubmit.textContent;
@@ -687,7 +650,7 @@ use App\Core\Router;
 
             case 'btnInfo':
                 if (!accountID) {
-                    showMessage('<?= App::loc('Please select a record first')?>', 'warning');
+                    showMessage('<?= L::loc('Please select a record first')?>', 'warning');
                     return false;
                 }
 
@@ -703,14 +666,14 @@ use App\Core\Router;
 
             case 'btnDelete':
                 if (!accountID) {
-                    showMessage('<?= App::loc('Please select a record first')?>', 'warning');
+                    showMessage('<?= L::loc('Please select a record first')?>', 'warning');
                     return false;
                 }
 
                 const name = tblMgr.getCellText(tblMgr.selectedRow.rowIndex - 1, 'name');
                 const surname = tblMgr.getCellText(tblMgr.selectedRow.rowIndex - 1, 'surname');
 
-                promptAccountDelete.setDescription(`<?= App::loc('Delete account #${accountID} for ${name} ${surname}')?>`)
+                promptAccountDelete.setDescription(`<?= L::loc('Delete account #${accountID} for ${name} ${surname}')?>`)
                 promptAccountDelete.setActionData('btnDelete', {
                     accountID
                 });
@@ -722,13 +685,13 @@ use App\Core\Router;
                 
             case 'btnEmailVerification':
                 if (!accountID) {
-                    showMessage('<?= App::loc('Please select a record first')?>', 'warning');
+                    showMessage('<?= L::loc('Please select a record first')?>', 'warning');
                     return false;
                 }
 
                 const email = e.target.dataset.email;
 
-                promptEmailVerification.setDescription(`<?= App::loc('Send email verification link to ${email}')?>`);
+                promptEmailVerification.setDescription(`<?= L::loc('Send email verification link to ${email}')?>`);
                 promptEmailVerification.setActionData('btnSend', {
                     accountID
                 });
@@ -737,26 +700,6 @@ use App\Core\Router;
                 currentOper = 'EmailVerification';
                 
                 break;
-            
-            <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                case 'btnMobileVerification':
-                    if (!accountID) {
-                        showMessage('<?= App::loc('Please select a record first')?>', 'warning');
-                        return false;
-                    }
-
-                    const mobile = e.target.dataset.mobile;
-
-                    promptMobileVerification.setDescription(`<?= App::loc('Send mobile verification SMS to ${mobile}')?>`)
-                    promptMobileVerification.setActionData('btnSend', {
-                        accountID
-                    });
-
-                    promptMobileVerification.show();
-                    currentOper = 'MobileVerification';
-
-                    break;
-            <?php endif?>
 
             case 'btnRefresh':
                 // Reset search params on Refresh operation
@@ -839,7 +782,7 @@ use App\Core\Router;
 
                 if (['Create', 'Update'].indexOf(currentOper) > -1) {
                     if(!validator.validate(currentOper == 'Edit'?[$('#password')]:null)){
-                        showMessage('<?= App::loc('Some data are missing or invalid')?>', 'warning');
+                        showMessage('<?= L::loc('Some data are missing or invalid')?>', 'warning');
                         return;
                     }
 
@@ -973,7 +916,7 @@ use App\Core\Router;
                 }
 
                 if(resp.data.length == 0){
-                    showMessage('<?= App::loc('No data were found')?>', 'warning');
+                    showMessage('<?= L::loc('No data were found')?>', 'warning');
                     btnSubmit.disabled = true;
 
                     return false;
@@ -1000,12 +943,9 @@ use App\Core\Router;
                 $('#personal_photo_verification').value = data['personal_photo_verification'];
                 $('#email_verification').value = data['email_verification'];
                 $('#mobile_verification').value = data['mobile_verification'];
-                $('#imgPersonalPhoto').src = '<?= Router::routeUrl('account-photo')?>'.replace('{photo_path}', data['personal_photo']);
+                $('#imgPersonalPhoto').src = '<?= Router::route('account-photo')?>'.replace('{photo_path}', data['personal_photo']);
                 
                 $('#btnEmailVerification').dataset.email = data['email'];
-                <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                    $('#btnMobileVerification').dataset.mobile = `${data['dialing_code']} ${data['mobile']}`;
-                <?php endif?>
                 
                 $('#gender').dispatchEvent(new Event('change'));
                 $('#country').dispatchEvent(new Event('change'));
@@ -1014,53 +954,28 @@ use App\Core\Router;
                 const emailVer = $('#emailVerification');
                 const mobileVer = $('#mobileVerification');
                 const btnEmailVer = $('#btnEmailVerification');
-                <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                    const btnMobileVer = $('#btnMobileVerification');
-                <?php else:?>
-                    const smsVerNumber = $('#smsVerificationNumber');
-                <?php endif?>
-
+                
                 photoVer.classList.remove('tag-verified', 'tag-not-verified', 'tag-rejected');
                 emailVer.classList.remove('tag-verified', 'tag-not-verified');
                 mobileVer.classList.remove('tag-verified', 'tag-not-verified');
 
                 if(data['personal_photo_verification'] == 'Verified'){
-                    photoVer.textContent = '<?= App::loc('Verified')?>';
+                    photoVer.textContent = '<?= L::loc('Verified')?>';
                     photoVer.classList.add('tag-verified');
                 }else if(data['personal_photo_verification'] == 'Rejected'){
-                    photoVer.textContent = '<?= App::loc('Rejected')?>';
+                    photoVer.textContent = '<?= L::loc('Rejected')?>';
                     photoVer.classList.add('tag-rejected');
                 }else{
-                    photoVer.textContent = '<?= App::loc('Not verified')?>';
+                    photoVer.textContent = '<?= L::loc('Not verified')?>';
                     photoVer.classList.add('tag-not-verified');
                 }
 
-                if(data['mobile_verification'] == 'Verified'){
-                    mobileVer.textContent = '<?= App::loc('Verified')?>';
-                    mobileVer.classList.add('tag-verified');
-                    <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                        btnMobileVer.classList.add('hidden');
-                    <?php else:?>
-                        smsVerNumber.innerHTML = '';
-                        smsVerNumber.classList.add('hidden');
-                    <?php endif?>
-                }else{
-                    mobileVer.textContent = '<?= App::loc('Not verified')?>';
-                    mobileVer.classList.add('tag-not-verified');
-                    <?php if(MOBILE_VERIFICATION_MODE == 'Send'):?>
-                        btnMobileVer.classList.remove('hidden');
-                    <?php else:?>
-                        smsVerNumber.innerHTML = `<?= App::loc('Verify your mobile by sending the code {code} via SMS to this number {sms_number}', '', ['sms_number' => $params['sms_virtual_number']])?>`.replace('{code}', data['mobile_verification']);
-                        smsVerNumber.classList.remove('hidden');
-                    <?php endif?>
-                }
-
                 if(data['email_verification'] == 'Verified'){
-                    emailVer.textContent = '<?= App::loc('Verified')?>';
+                    emailVer.textContent = '<?= L::loc('Verified')?>';
                     emailVer.classList.add('tag-verified');
                     btnEmailVer.classList.add('hidden');
                 }else{
-                    emailVer.textContent = '<?= App::loc('Not verified')?>';
+                    emailVer.textContent = '<?= L::loc('Not verified')?>';
                     emailVer.classList.add('tag-not-verified');
                     btnEmailVer.classList.remove('hidden');
                 }
@@ -1080,7 +995,7 @@ use App\Core\Router;
                 }
 
                 if(resp.data.length == 0){
-                    showMessage('<?= App::loc('No data were found')?>', 'warning');
+                    showMessage('<?= L::loc('No data were found')?>', 'warning');
 
                     return false;
                 }
@@ -1091,21 +1006,21 @@ use App\Core\Router;
                 $('#info_account_id').textContent = data['account_id'];
                 $('#info_account_type').textContent = accountType[data['account_type']]||data['account_type'];
                 $('#info_gender').textContent = gender[data['gender']]||data['gender'];
-                $('#info_hidden_personality').textContent = !!parseInt(data['hidden_personality'])?'<?= App::loc('Yes') ?>': '<?= App::loc('No') ?>';
+                $('#info_hidden_personality').textContent = !!parseInt(data['hidden_personality'])?'<?= L::loc('Yes') ?>': '<?= L::loc('No') ?>';
                 $('#info_name').textContent = data['name'];
                 $('#info_surname').textContent = data['surname'];
                 $('#info_country').textContent = data['country'];
                 $('#info_email').innerHTML = `<a href="mailto:${data['email']}" dir="ltr">${data['email']}</a>`;
-                $('#info_mobile').innerHTML = `<a href="tel:${data['dialing_code']}${data['mobile']}" dir="ltr">${data['dialing_code']} ${data['mobile']}</a> ${data['mobile_verification'] == 'Verified'?'': '<span class="no-wrap"><?= App::loc('Verification code')?> <b dir="ltr">' + data['mobile_verification'] + '</b></span>'}`;
+                $('#info_mobile').innerHTML = `<a href="tel:${data['dialing_code']}${data['mobile']}" dir="ltr">${data['dialing_code']} ${data['mobile']}</a> ${data['mobile_verification'] == 'Verified'?'': '<span class="no-wrap"><?= L::loc('Verification code')?> <b dir="ltr">' + data['mobile_verification'] + '</b></span>'}`;
                 $('#info_preferred_language').textContent = preferredLanguage[data['preferred_language']]||data['preferred_language'];
-                $('#info_notification_emails').textContent = !!parseInt(data['notification_emails'])?'<?= App::loc('Yes') ?>': '<?= App::loc('No') ?>';
+                $('#info_notification_emails').textContent = !!parseInt(data['notification_emails'])?'<?= L::loc('Yes') ?>': '<?= L::loc('No') ?>';
                 $('#info_remarks').textContent = data['remarks'];
                 $('#info_admin_notes').textContent = data['admin_notes'];
                 $('#info_register_date').textContent = data['register_date'];
                 $('#info_account_status').textContent = accountStatus[data['account_status']]||data['account_status'];
                 $('#info_ratings_count').textContent = accountStatus[data['ratings_count']]||data['ratings_count'];
                 $('#info_rating').innerHTML = `<span class="bidi">${data['rating']}<i class="icon-star"></i> ${ratingDescriptions[parseInt(data['rating'])]||data['rating']}</span>`;
-                $('#imgInfoPersonalPhoto').src = '<?= Router::routeUrl('account-photo')?>'.replace('{photo_path}', data['personal_photo']);
+                $('#imgInfoPersonalPhoto').src = '<?= Router::route('account-photo')?>'.replace('{photo_path}', data['personal_photo']);
                 
                 const photoVer = $('#infoPhotoVerification');
                 const emailVer = $('#infoEmailVerification');
@@ -1116,29 +1031,29 @@ use App\Core\Router;
                 mobileVer.classList.remove('tag-verified', 'tag-not-verified');
 
                 if(data['personal_photo_verification'] == 'Verified'){
-                    photoVer.textContent = '<?= App::loc('Verified')?>';
+                    photoVer.textContent = '<?= L::loc('Verified')?>';
                     photoVer.classList.add('tag-verified');
                 }else if(data['personal_photo_verification'] == 'Rejected'){
-                    photoVer.textContent = '<?= App::loc('Rejected')?>';
+                    photoVer.textContent = '<?= L::loc('Rejected')?>';
                     photoVer.classList.add('tag-rejected');
                 }else{
-                    photoVer.textContent = '<?= App::loc('Not verified')?>';
+                    photoVer.textContent = '<?= L::loc('Not verified')?>';
                     photoVer.classList.add('tag-not-verified');
                 }
 
                 if(data['mobile_verification'] == 'Verified'){
-                    mobileVer.textContent = '<?= App::loc('Verified')?>';
+                    mobileVer.textContent = '<?= L::loc('Verified')?>';
                     mobileVer.classList.add('tag-verified');
                 }else{
-                    mobileVer.textContent = '<?= App::loc('Not verified')?>';
+                    mobileVer.textContent = '<?= L::loc('Not verified')?>';
                     mobileVer.classList.add('tag-not-verified');
                 }
 
                 if(data['email_verification'] == 'Verified'){
-                    emailVer.textContent = '<?= App::loc('Verified')?>';
+                    emailVer.textContent = '<?= L::loc('Verified')?>';
                     emailVer.classList.add('tag-verified');
                 }else{
-                    emailVer.textContent = '<?= App::loc('Not verified')?>';
+                    emailVer.textContent = '<?= L::loc('Not verified')?>';
                     emailVer.classList.add('tag-not-verified');
                 }
                 

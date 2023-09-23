@@ -41,7 +41,7 @@ Check if specified page code is currently selected one
 * @return `string` selected | ''
 
 ```php
-App::loc($str, $lang='')
+L::loc($str, $lang='')
 ```
 Localize specified string using specified language (use App's current language if omitted)
 * @param `string` $str string to be localized

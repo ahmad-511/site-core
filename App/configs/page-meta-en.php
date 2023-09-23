@@ -1,6 +1,6 @@
 <?php
 
-use App\Core\App;
+use App\Core\Localizer as L;
 
 /**
  * Specify page/view meta tags for localized version of the page/view (depending on the file suffix, i.e. page-meta-xx.php)
@@ -10,7 +10,7 @@ use App\Core\App;
  */
 return [
     'home'=>[
-        'title'=>App::loc('Home', 'en'),
+        'title'=>L::loc('Home', 'en'),
         'description'=> '',
         'keywords'=> '',
         'image'=> WEBSITE_URL . '/img/og-home-image.png'
